@@ -1,4 +1,2 @@
 # SegfaultProject
 Segmentation fault
-
-coucou
