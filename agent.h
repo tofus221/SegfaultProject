@@ -18,4 +18,9 @@ typedef struct agent{
     int Ypos;
 }agent;
 
+struct agentLinkedList{
+    agent* agent;
+    struct agentLinkedList* next;
+};
+
 #endif //SEGFAULTPROJECT_AGENT_H

@@ -2,10 +2,13 @@
 #define ENGINE_H
 
 #include <SDL/SDL.h>
+#include "agent.h"
 
 typedef struct simulation
 {
     SDL_Surface *screen;
+    agent* agentList;
+
 } simulation;
 
 simulation *initEngine();
