@@ -13,6 +13,7 @@ typedef struct agentType{
 } agentType;
 
 typedef struct agent{
+    int id;
     agentType* type;
     int Xpos;
     int Ypos;
@@ -22,5 +23,14 @@ struct agentLinkedList{
     agent* agent;
     struct agentLinkedList* next;
 };
+
+agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance);
+agent* createAgent(int id, agentType* type, int x, int y);
+void moveAgent(agent* agent, int addX, int addY);
+struct agentLinkedList* initLinkedList();
+void push(struct agentLinkedList* list, agent* agentToAdd);
+agent* pop(struct agentLinkedList* list);
+agent* popWithId(struct agentLinkedList* list, int id);
+void freeLinkedList(struct agentLinkedList* agentLinkedList);
 
 #endif //SEGFAULTPROJECT_AGENT_H

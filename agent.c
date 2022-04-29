@@ -3,7 +3,7 @@
 #include <err.h>
 #include "agent.h"
 
-//create a Agent Type via the interface
+//create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance){
     agentType* newAgent = malloc(sizeof (agentType));
     memset(newAgent, 0, sizeof(agentType));
@@ -16,9 +16,10 @@ agentType* createAgentType(char* name, float lifeSpan, float energy, float speed
 }
 
 //actual agent in the simulation
-agent* createAgent(agentType* type, int x, int y){
+agent* createAgent(int id, agentType* type, int x, int y){
     agent* newAgent = malloc(sizeof (agent));
     memset(newAgent, 0, sizeof (agent));
+    newAgent->id = id;
     newAgent->type = type;
     newAgent->Xpos = x;
     newAgent->Ypos = y;
@@ -41,33 +42,60 @@ struct agentLinkedList* initLinkedList(){
 
 //push an agent to the list.
 void push(struct agentLinkedList* list, agent* agentToAdd){
+    struct agentLinkedList* tmp = list;
     struct agentLinkedList* toAdd = malloc(sizeof(struct agentLinkedList));
     toAdd->next = NULL;
     toAdd->agent = agentToAdd;
-    while (list->next != NULL)
-        list = list->next;
-    list->next = toAdd;
+    while (tmp->next != NULL)
+        tmp = tmp->next;
+    tmp->next = toAdd;
 }
 
-//pops an agent at the index i or the last one if index is NULL and return it.
-agent* pop(struct agentLinkedList* list, size_t i){
-    if (list->agent == NULL)
-        errx(2, "agent.c: you are trying to pop an empty list");
-
+//pops an agent in the list and return it.
+agent* pop(struct agentLinkedList* list){
+    if (list->next == NULL)
+        errx(2, "pop: you are trying to pop an empty list");
+    struct agentLinkedList* tmp = list;
     struct agentLinkedList* parent;
-    if (i == NULL){
-        while (list->next != NULL){
-            parent = list;
-            list = list->next;
-        }
-        parent->next = NULL;
-        return list->agent;
-    } else {
-        for (size_t j = 0; j < i; j++){
-            parent = list;
-            list = list->next;
-        }
-        parent->next = NULL;
-        return list->agent;
+    while (tmp->next != NULL){
+        parent = tmp;
+        tmp = tmp->next;
     }
+    parent->next = NULL;
+    agent* toReturn = tmp->agent;
+    free(tmp);
+    return toReturn;
+
+}
+
+//pops an agents in the list with the following id and return it.
+agent* popWithId(struct agentLinkedList* list, int id){
+    if (list->next == NULL)
+        errx(2, "popWithId: you are trying to pop an empty list");
+
+    struct agentLinkedList* tmp = list->next; //skip the sentinel
+    struct agentLinkedList* parent = list;
+    while (tmp->agent->id != id && tmp->next != NULL){
+        parent = tmp;
+        tmp = tmp->next;
+    }
+    if (tmp->next == NULL && tmp->agent->id != id)
+        errx(2, "popWithId: no agents with that ID found");
+    parent->next = tmp->next;
+    agent* toReturn = tmp->agent;
+    free(tmp);
+    return toReturn;
+}
+
+//free the linked list.
+void freeLinkedList(struct agentLinkedList* agentLinkedList){
+    struct agentLinkedList* parent;
+    while (agentLinkedList->next != NULL){
+        parent = agentLinkedList;
+        agentLinkedList = agentLinkedList->next;
+        free(parent->agent);
+        free(parent);
+    }
+    free(agentLinkedList->agent);
+    free(agentLinkedList);
 }
