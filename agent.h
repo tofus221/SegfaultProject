@@ -1,5 +1,6 @@
 #ifndef SEGFAULTPROJECT_AGENT_H
 #define SEGFAULTPROJECT_AGENT_H
+#include "SDL/SDL.h"
 
 typedef struct agentType{
     char* name;
@@ -29,8 +30,9 @@ agent* createAgent(int id, agentType* type, int x, int y);
 void moveAgent(agent* agent, int addX, int addY);
 struct agentLinkedList* initLinkedList();
 void push(struct agentLinkedList* list, agent* agentToAdd);
-agent* pop(struct agentLinkedList* list);
-agent* popWithId(struct agentLinkedList* list, int id);
+int pop(struct agentLinkedList* list, agent* res);
+int popWithId(struct agentLinkedList* list, int id, agent* res);
 void freeLinkedList(struct agentLinkedList* agentLinkedList);
+void drawAgents(SDL_Surface* screen, struct agentLinkedList* list);
 
 #endif //SEGFAULTPROJECT_AGENT_H

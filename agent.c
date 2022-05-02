@@ -1,7 +1,8 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <memory.h>
-#include <err.h>
 #include "agent.h"
+#include "SDL/SDL.h"
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance){
@@ -15,7 +16,7 @@ agentType* createAgentType(char* name, float lifeSpan, float energy, float speed
     return newAgent;
 }
 
-//actual agent in the simulation
+//create an actual agent in the simulation.
 agent* createAgent(int id, agentType* type, int x, int y){
     agent* newAgent = malloc(sizeof (agent));
     memset(newAgent, 0, sizeof (agent));
@@ -51,10 +52,13 @@ void push(struct agentLinkedList* list, agent* agentToAdd){
     tmp->next = toAdd;
 }
 
-//pops an agent in the list and return it.
-agent* pop(struct agentLinkedList* list){
-    if (list->next == NULL)
-        errx(2, "pop: you are trying to pop an empty list");
+//pops an agent in the list and return it in the res argument.
+//return 0 if everything went well, -1 otherwise.
+int pop(struct agentLinkedList* list, agent* res){
+    if (list->next == NULL) {
+        printf("pop: you are trying to pop an empty list\n");
+        return -1;
+    }
     struct agentLinkedList* tmp = list;
     struct agentLinkedList* parent;
     while (tmp->next != NULL){
@@ -62,16 +66,19 @@ agent* pop(struct agentLinkedList* list){
         tmp = tmp->next;
     }
     parent->next = NULL;
-    agent* toReturn = tmp->agent;
+    res = tmp->agent;
     free(tmp);
-    return toReturn;
+    return 0;
 
 }
 
-//pops an agents in the list with the following id and return it.
-agent* popWithId(struct agentLinkedList* list, int id){
-    if (list->next == NULL)
-        errx(2, "popWithId: you are trying to pop an empty list");
+//pops an agents in the list with the following id and return it in the res argument
+//return 0 if everything went well, -1 otherwise.
+int popWithId(struct agentLinkedList* list, int id, agent* res){
+    if (list->next == NULL) {
+        printf("popWithId: you are trying to pop an empty list.\n");
+        return -1;
+    }
 
     struct agentLinkedList* tmp = list->next; //skip the sentinel
     struct agentLinkedList* parent = list;
@@ -79,12 +86,14 @@ agent* popWithId(struct agentLinkedList* list, int id){
         parent = tmp;
         tmp = tmp->next;
     }
-    if (tmp->next == NULL && tmp->agent->id != id)
-        errx(2, "popWithId: no agents with that ID found");
+    if (tmp->next == NULL && tmp->agent->id != id) {
+        printf("popWithId: no agents with this ID have been found\n");
+        return -1;
+    }
     parent->next = tmp->next;
-    agent* toReturn = tmp->agent;
+    res = tmp->agent;
     free(tmp);
-    return toReturn;
+    return 0;
 }
 
 //free the linked list.
@@ -98,4 +107,22 @@ void freeLinkedList(struct agentLinkedList* agentLinkedList){
     }
     free(agentLinkedList->agent);
     free(agentLinkedList);
+}
+
+void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
+    if (list->next == NULL) //check if the list is empty
+        return;
+    Uint32 color = SDL_MapRGB(screen->format, 255, 0, 0); //temporary, should be really cool to be able to put an image instead
+    SDL_Rect rect;
+    rect.w = 2;
+    rect.h = 2;
+
+    list = list->next; // skip the sentinel
+    while (list->next != NULL){
+        agent* agent = list->agent;
+        rect.x = (Sint16)agent->Xpos; //weird cast but my IDE seems more fine with it than without, might just be fine tho
+        rect.y = (Sint16)agent->Ypos;
+        SDL_FillRect(screen, &rect, color);
+        list = list->next;
+    }
 }

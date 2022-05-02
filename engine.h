@@ -7,7 +7,7 @@
 typedef struct simulation
 {
     SDL_Surface *screen;
-    agent* agentList;
+    struct agentLinkedList* agentList;
 
 } simulation;
 

@@ -1,6 +1,7 @@
 #include <SDL/SDL_mouse.h>
 #include <err.h>
 #include "engine.h"
+#include "agent.h"
 
 #define FAST 13
 #define MEDIUM 25
@@ -28,12 +29,14 @@ simulation *initEngine()
     
     simulation *sim = malloc(sizeof(simulation));
     sim->screen = screen;
+    sim->agentList = initLinkedList();
     return sim;
 }
 
 void free_simulation(simulation *sim)
 {
     SDL_FreeSurface(sim->screen);
+    freeLinkedList(sim->agentList);
     free(sim);
 }
 
@@ -72,8 +75,8 @@ void run(simulation *sim, void (*update)(simulation *))
     {
         getEvents();
 
-        Uint32 black = SDL_MapRGB(sim->screen->format, 0, 0, 0);
-        SDL_FillRect(sim->screen, NULL, black);
+        Uint32 white = SDL_MapRGB(sim->screen->format, 255, 255, 255);
+        SDL_FillRect(sim->screen, NULL, white);
 
         (*update)(sim);
         
