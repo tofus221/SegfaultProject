@@ -20,7 +20,7 @@ void update(simulation *sim)
     }
     if(x >= screen->w)
     {
-        x = screen->w;
+        x = screen->w - 1;
         dx *= -1;
     }
     if(y < 0)
@@ -30,15 +30,16 @@ void update(simulation *sim)
     }
     if(y >= screen->h)
     {
-        y = screen->h;
+        y = screen->h - 1;
         dy *= -1;
     }
+
     put_pixel(screen, x, y, color);
 }
 
 int main()
 {
-    simulation *sim = initEngine();
+    simulation *sim = initEngine(500, 500);
 
     run(sim, update);
 
