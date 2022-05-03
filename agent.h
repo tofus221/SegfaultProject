@@ -33,7 +33,9 @@ struct agentLinkedList* initLinkedList();
 void push(simulation* simulation1, agent* agentToAdd);
 int pop(struct agentLinkedList* list, agent* res);
 int popWithId(struct agentLinkedList* list, int id, agent* res);
+agent* peekWithID(struct agentLinkedList* list, int id);
 void freeLinkedList(struct agentLinkedList* agentLinkedList);
 void drawAgents(SDL_Surface* screen, struct agentLinkedList* list);
+void reproduction(agent* agent1, agent* agent2, simulation* sim);
 
 #endif //SEGFAULTPROJECT_AGENT_H
