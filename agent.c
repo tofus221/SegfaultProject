@@ -3,6 +3,9 @@
 #include <memory.h>
 #include "agent.h"
 #include "SDL/SDL.h"
+#include "engine.h"
+
+#define GENETICDRIFT 0.01
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance){
@@ -17,10 +20,9 @@ agentType* createAgentType(char* name, float lifeSpan, float energy, float speed
 }
 
 //create an actual agent in the simulation.
-agent* createAgent(int id, agentType* type, int x, int y){
+agent* createAgent(agentType* type, int x, int y){
     agent* newAgent = malloc(sizeof (agent));
     memset(newAgent, 0, sizeof (agent));
-    newAgent->id = id;
     newAgent->type = type;
     newAgent->Xpos = x;
     newAgent->Ypos = y;
@@ -42,14 +44,16 @@ struct agentLinkedList* initLinkedList(){
 }
 
 //push an agent to the list.
-void push(struct agentLinkedList* list, agent* agentToAdd){
-    struct agentLinkedList* tmp = list;
+void push(simulation* simulation1, agent* agentToAdd){
+    struct agentLinkedList* tmp = simulation1->agentList;
     struct agentLinkedList* toAdd = malloc(sizeof(struct agentLinkedList));
     toAdd->next = NULL;
     toAdd->agent = agentToAdd;
     while (tmp->next != NULL)
         tmp = tmp->next;
     tmp->next = toAdd;
+    simulation1->popCount++;
+    agentToAdd->id = simulation1->popCount;
 }
 
 //pops an agent in the list and return it in the res argument.
@@ -126,3 +130,79 @@ void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
         list = list->next;
     }
 }
+
+float geneticDrift(float value){
+    srand(NULL);
+    float newValue = value;
+    float drift = value * GENETICDRIFT;
+    if (rand()%2)
+        newValue += (float)rand()/(float)(RAND_MAX/drift);
+    else
+        newValue -= (float)rand()/(float)(RAND_MAX/drift);
+    return newValue;
+}
+
+agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
+    float newLifeSpan, newEnergy, newSpeed, newResistance;
+    agentType* agentType1 = agent1->type;
+    agentType* agentType2 = agent2->type;
+    if (rand()%2){
+        newLifeSpan = geneticDrift(agentType1->lifeSpan);
+        newEnergy = geneticDrift(agentType1->energy);
+        newSpeed = geneticDrift(agentType1->speed);
+        newResistance = geneticDrift(agentType1->resistance);
+    } else{
+        newLifeSpan = geneticDrift(agentType2->lifeSpan);
+        newEnergy = geneticDrift(agentType2->energy);
+        newSpeed = geneticDrift(agentType2->speed);
+        newResistance = geneticDrift(agentType2->resistance);
+    }
+    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance);
+}
+
+agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
+    float newLifeSpan, newEnergy, newSpeed, newResistance;
+    agentType* agentType1 = agent1->type;
+    agentType* agentType2 = agent2->type;
+    for (int i = 0; i < 4; i++) {
+        switch (i) {
+            case 0:
+                if (rand()%2)
+                    newLifeSpan = agentType1->lifeSpan;
+                else
+                    newLifeSpan = agentType2->lifeSpan;
+                break;
+            case 1:
+                if (rand()%2)
+                    newEnergy = agentType1->energy;
+                else
+                    newEnergy= agentType2->energy;
+                break;
+            case 2:
+                if (rand()%2)
+                    newSpeed = agentType1->speed;
+                else
+                    newSpeed = agentType2->speed;
+                break;
+            default:
+                if (rand()%2)
+                    newResistance = agentType1->resistance;
+                else
+                    newResistance = agentType2->resistance;
+                break;
+        }
+    }
+
+    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance);
+}
+
+void reproduction(agent* agent1, agent* agent2, simulation* sim){
+    srand(NULL); //initialize the random generator
+    agentType* newType;
+    if (rand()%2) //pick if there will be drift or not
+        newType = reproductionWithGeneticDrift(agent1, agent2);
+    else
+        newType = normalReproduction(agent1, agent2);
+    agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
+    push(sim, newAgent);
+};
