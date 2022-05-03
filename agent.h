@@ -38,5 +38,6 @@ int pop(struct agentLinkedList* list, agent* res);
 int popWithId(struct agentLinkedList* list, int id, agent* res);
 void freeLinkedList(struct agentLinkedList* agentLinkedList);
 void drawAgents(SDL_Surface* screen, struct agentLinkedList* list);
+int agentBehave(agent* mainAgent, simulation* sim);
 
 #endif //SEGFAULTPROJECT_AGENT_H

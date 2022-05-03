@@ -33,6 +33,19 @@ agent* createAgent(agentType* type, int x, int y){
     return newAgent;
 }
 
+void freeAgentType(agentType* agentT)
+{
+    free(agentT->targets);
+    free(agentT->name);
+    free(agentT);
+}
+
+void freeAgent(agent* agt)
+{
+    freeAgentType(agt->type);
+    free(agt);
+}
+
 void moveAgent(agent* agent, int addX, int addY){
     agent->Xpos += addX;
     agent->Ypos += addY;
@@ -110,7 +123,7 @@ void freeLinkedList(struct agentLinkedList* agentLinkedList){
     while (agentLinkedList->next != NULL){
         parent = agentLinkedList;
         agentLinkedList = agentLinkedList->next;
-        free(parent->agent);
+        freeAgent(parent->agent);
         free(parent);
     }
     free(agentLinkedList->agent);
@@ -248,31 +261,16 @@ int canSeeAgent(agent* mainAgent, agent* targetAgent)
     return distance <= mainAgent->type->hearingRange;
 }
 
-/*
-struct agentLinkedList* GetSeenAgents(agent* mainAgent, simulation* sim)
-{
-    struct agentLinkedList* targets = initLinkedList(); 
-    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
-    {
-        agent* currAgent = curr->agent;
-        if (mainAgent != currAgent)
-        {
-            if (canSeeAgent(mainAgent,currAgent))
-            {
-                push(sim,currAgent);
-            }
-            
-        }
-        
-    }
-    
-} */
-
 int tryFeed(agent* mainAgent, simulation* sim)
 {
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
+        if (mainAgent == currAgent)
+        {
+            continue;
+        }
+
         for (int i = 0; i < mainAgent->type->targetAmount; i++)
         {
             if (strcmp(mainAgent->type->targets[i],currAgent->type->name))
@@ -281,7 +279,8 @@ int tryFeed(agent* mainAgent, simulation* sim)
                 {
                     mainAgent->type->energy += currAgent->type->energy;
                     popWithId(sim->agentList,currAgent->id,currAgent);
-                    // need agent free func
+                    freeAgent(currAgent);
+                    sim->popCount--;
                 }
                 return 1;
             }
@@ -295,6 +294,11 @@ int tryMate(agent* mainAgent, simulation* sim)
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
+        if (mainAgent == currAgent)
+        {
+            continue;
+        }
+
         if (strcmp(mainAgent->type->name,currAgent->type->name) && (currAgent->type->energy > REPRODUCTION_THRESHOLD))
         {
             if (moveTowards(mainAgent, currAgent->Xpos, currAgent->Ypos))
