@@ -1,48 +1,43 @@
 #include <stdio.h>
+#include <time.h>
 #include "engine.h"
 #include "pixelOp.h"
+#include "perlin.h"
+#include <math.h>
 
-int x = 180, y = 328;
-int dx = 1, dy = 2;
-
+SDL_Surface *terrain;
+Uint8 r = 0;
 void update(simulation *sim)
 {
-    SDL_Surface *screen = sim->screen;
-    Uint32 color = SDL_MapRGB(screen->format, 255, 255, 255);
-
-    x += dx;
-    y += dy;
-
-    if(x < 0)
-    {
-        x = 0;
-        dx *= -1;
-    }
-    if(x >= screen->w)
-    {
-        x = screen->w - 1;
-        dx *= -1;
-    }
-    if(y < 0)
-    {
-        y = 0;
-        dy *= -1;
-    }
-    if(y >= screen->h)
-    {
-        y = screen->h - 1;
-        dy *= -1;
-    }
-
-    put_pixel(screen, x, y, color);
+    SDL_BlitSurface(terrain, NULL, sim->screen, NULL);
 }
 
 int main()
 {
+    srand(time(NULL));
+    terrain = SDL_CreateRGBSurface(0, 500, 500, 32, 0, 0, 0 ,0);
+
+    init_gradients(500, 500);
+    for(int x = 0; x < 500; x++)
+    {
+        for (int y = 0; y < 500; y++)
+        {
+            float p = (perlin(x, y) + 1) / 2;
+            int r = floorf(p * 255.0);
+            printf("%d\n", r);
+            Uint32 color = SDL_MapRGB(terrain->format, r, r, r);
+            put_pixel(terrain, x, y, color);
+        }
+        
+    }
+    free_gradients();
+
     simulation *sim = initEngine(500, 500);
 
     run(sim, update);
 
     free_simulation(sim);
+    
+    SDL_FreeSurface(terrain);
     return 0;
 }
