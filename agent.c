@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <memory.h>
 #include <math.h>
+#include <time.h>
 #include "agent.h"
 #include "SDL/SDL.h"
 #include "engine.h"
 
 #define GENETICDRIFT 0.01
+#define REPRODUCTION_THRESHOLD 200.0
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance, float hRange){
@@ -134,7 +136,7 @@ void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
 }
 
 float geneticDrift(float value){
-    srand(NULL);
+    srand(time(0));
     float newValue = value;
     float drift = value * GENETICDRIFT;
     if (rand()%2)
@@ -208,7 +210,7 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
 }
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
-    srand(NULL); //initialize the random generator
+    srand(time(0)); //initialize the random generator
     agentType* newType;
     if (rand()%2) //pick if there will be drift or not
         newType = reproductionWithGeneticDrift(agent1, agent2);
@@ -279,10 +281,50 @@ int tryFeed(agent* mainAgent, simulation* sim)
                 {
                     mainAgent->type->energy += currAgent->type->energy;
                     popWithId(sim->agentList,currAgent->id,currAgent);
+                    // need agent free func
                 }
                 return 1;
             }
         }
     }
     return 0;
+}
+
+int tryMate(agent* mainAgent, simulation* sim)
+{
+    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
+    {
+        agent* currAgent = curr->agent;
+        if (strcmp(mainAgent->type->name,currAgent->type->name) && (currAgent->type->energy > REPRODUCTION_THRESHOLD))
+        {
+            if (moveTowards(mainAgent, currAgent->Xpos, currAgent->Ypos))
+            {
+                reproduction(mainAgent,currAgent,sim);
+                mainAgent->type->energy -= REPRODUCTION_THRESHOLD / 2;
+                currAgent->type->energy -= REPRODUCTION_THRESHOLD / 2;
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// makes an agent behave; returns 2 when trying to mate, 1 when trying to feed, and 0 when wandering.
+int agentBehave(agent* mainAgent, simulation* sim)
+{
+    srand(time(0));
+    if (mainAgent->type->energy > REPRODUCTION_THRESHOLD)
+    {
+        if (tryMate(mainAgent, sim))
+        {
+            return 2;
+        }
+    }
+    if (tryFeed(mainAgent, sim))
+    {
+        return 1;
+    }
+    moveTowards(mainAgent,rand(),rand());
+    return 1;
+    
 }
