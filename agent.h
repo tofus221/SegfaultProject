@@ -12,6 +12,9 @@ typedef struct agentType{
     float speed;
     char* reproductionType;
     float resistance;
+    float hearingRange;
+    char** targets;
+    int targetAmount;
 } agentType;
 
 typedef struct agent{
@@ -26,7 +29,7 @@ struct agentLinkedList{
     struct agentLinkedList* next;
 };
 
-agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance);
+agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance, float hRange);
 agent* createAgent(agentType* type, int x, int y);
 void moveAgent(agent* agent, int addX, int addY);
 struct agentLinkedList* initLinkedList();

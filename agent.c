@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
+#include <math.h>
 #include "agent.h"
 #include "SDL/SDL.h"
 #include "engine.h"
@@ -8,7 +9,7 @@
 #define GENETICDRIFT 0.01
 
 //create an Agent Type, meant to be used with the interface.
-agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance){
+agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance, float hRange){
     agentType* newAgent = malloc(sizeof (agentType));
     memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
@@ -16,6 +17,7 @@ agentType* createAgentType(char* name, float lifeSpan, float energy, float speed
     newAgent->energy = energy;
     newAgent->speed = speed;
     newAgent->resistance = resistance;
+    newAgent->hearingRange = hRange;
     return newAgent;
 }
 
@@ -143,7 +145,7 @@ float geneticDrift(float value){
 }
 
 agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
-    float newLifeSpan, newEnergy, newSpeed, newResistance;
+    float newLifeSpan, newEnergy, newSpeed, newResistance, newHrange;
     agentType* agentType1 = agent1->type;
     agentType* agentType2 = agent2->type;
     if (rand()%2){
@@ -151,20 +153,23 @@ agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
         newEnergy = geneticDrift(agentType1->energy);
         newSpeed = geneticDrift(agentType1->speed);
         newResistance = geneticDrift(agentType1->resistance);
+        newHrange = geneticDrift(agentType1->hearingRange);
     } else{
         newLifeSpan = geneticDrift(agentType2->lifeSpan);
         newEnergy = geneticDrift(agentType2->energy);
         newSpeed = geneticDrift(agentType2->speed);
         newResistance = geneticDrift(agentType2->resistance);
+        newHrange = geneticDrift(agentType2->hearingRange);
+        
     }
-    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance);
+    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
 }
 
 agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
-    float newLifeSpan, newEnergy, newSpeed, newResistance;
+    float newLifeSpan, newEnergy, newSpeed, newResistance, newHrange;
     agentType* agentType1 = agent1->type;
     agentType* agentType2 = agent2->type;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         switch (i) {
             case 0:
                 if (rand()%2)
@@ -184,16 +189,22 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
                 else
                     newSpeed = agentType2->speed;
                 break;
-            default:
+            case 3:
                 if (rand()%2)
                     newResistance = agentType1->resistance;
                 else
                     newResistance = agentType2->resistance;
                 break;
+            default:
+                if (rand()%2)
+                    newHrange = agentType1->hearingRange;
+                else
+                    newHrange = agentType2->hearingRange;
+                break;
         }
     }
 
-    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance);
+    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
 }
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
@@ -206,3 +217,72 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
     agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
     push(sim, newAgent);
 };
+
+
+int moveTowards(agent* agent, int x, int y)
+{
+    double xOFF = (double)x-agent->Xpos;
+    double yOFF = (double)y-agent->Ypos;
+    double distance = sqrt(xOFF*xOFF + yOFF*yOFF);
+    if (distance > (double)agent->type->speed)
+    {
+        double ratio = (double)agent->type->speed / distance;
+        moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio));
+        agent->type->energy -= agent->type->speed * agent->type->speed;
+        return 0;
+    }
+    agent->Xpos = x;
+    agent->Ypos = y;
+    agent->type->energy -= (float) distance * distance;
+    return 1;
+}
+
+
+int canSeeAgent(agent* mainAgent, agent* targetAgent)
+{
+    int xOffset = targetAgent->Xpos - mainAgent->Xpos;
+    int yOffset = targetAgent->Ypos - mainAgent->Ypos;
+    double distance = sqrt((double)xOffset*xOffset + yOffset*yOffset);
+    return distance <= mainAgent->type->hearingRange;
+}
+
+/*
+struct agentLinkedList* GetSeenAgents(agent* mainAgent, simulation* sim)
+{
+    struct agentLinkedList* targets = initLinkedList(); 
+    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
+    {
+        agent* currAgent = curr->agent;
+        if (mainAgent != currAgent)
+        {
+            if (canSeeAgent(mainAgent,currAgent))
+            {
+                push(sim,currAgent);
+            }
+            
+        }
+        
+    }
+    
+} */
+
+int tryFeed(agent* mainAgent, simulation* sim)
+{
+    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
+    {
+        agent* currAgent = curr->agent;
+        for (int i = 0; i < mainAgent->type->targetAmount; i++)
+        {
+            if (strcmp(mainAgent->type->targets[i],currAgent->type->name))
+            {
+                if(moveTowards(mainAgent,currAgent->Xpos,currAgent->Ypos))
+                {
+                    mainAgent->type->energy += currAgent->type->energy;
+                    popWithId(sim->agentList,currAgent->id,currAgent);
+                }
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
