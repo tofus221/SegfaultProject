@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <time.h>
 #include "engine.h"
-#include "pixelOp.h"
 #include "perlin.h"
 #include <math.h>
 
@@ -17,26 +16,7 @@ void update(simulation *sim)
 
 int main()
 {
-    srand(time(NULL));
-    terrain = SDL_CreateRGBSurface(0, W_WIDTH, W_HEIGHT, 32, 0, 0, 0 ,0);
-
-    init_gradients(W_WIDTH, W_HEIGHT);
-    float xoff = 0.0;
-    for(int x = 0; x < W_WIDTH; x++)
-    {
-        float yoff = 0.0;
-        for (int y = 0; y < W_HEIGHT; y++)
-        {
-            float p = (perlin(xoff, yoff) + 1) / 2;
-            int r = floorf(p * 255.0);
-            Uint32 color = SDL_MapRGB(terrain->format, r, r, r);
-            put_pixel(terrain, x, y, color);
-            yoff += 0.01;
-        }
-        xoff += 0.01;
-    }
-    free_gradients();
-
+    terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
 
     run(sim, update);
