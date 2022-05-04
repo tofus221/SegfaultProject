@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 #include "engine.h"
 #include "pixelOp.h"
+#include "agent.h"
 
 int x = 180, y = 328;
 int dx = 1, dy = 2;
@@ -33,13 +36,61 @@ void update(simulation *sim)
         y = screen->h;
         dy *= -1;
     }
-    put_pixel(screen, x, y, color);
+    
+    while (sim->popCount < 100)
+    {
+        agentType* aType = createAgentType("sheep",100,1000,2,6,100);
+        aType->targetAmount = 0;
+        aType->color = SDL_MapRGB(sim->screen->format, 0, 255, 0);
+        push(sim,createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h)));
+    }
+    
+    //put_pixel(screen, x, y, color);
+    for (struct agentLinkedList *al = sim->agentList->next; al != NULL;)
+    {
+        /*
+        if (al->agent->type->energy <= 0.0f)
+        {
+            struct agentLinkedList *temp = al;
+            al = al->next;
+            agent* res;
+            popWithId(sim->agentList,temp->agent->id,res);
+            //freeAgent(res);
+            sim->popCount--;
+            continue;
+        }
+        */
+        if (strcmp(al->agent->type->name, "wolf") == 0)
+        {
+            int res = agentBehave(al->agent,sim);
+        }
+        else
+        {
+            moveTowards(al->agent,rand() % (sim->screen->w),rand() % (sim->screen->h));
+        }
+        printf("pop = %i\n",sim->popCount);
+        al = al->next;
+    }
+    
+    drawAgents(sim->screen,sim->agentList);
+
+
+
 }
 
 int main()
 {
+    srand(time(0));
     simulation *sim = initEngine();
-
+    for (size_t i = 0; i < 3; i++)
+    {
+        agentType* aType = createAgentType("wolf",1000,1000,3,6,40);
+        aType->targetAmount = 1;
+        aType->targets = calloc(aType->targetAmount, sizeof(char*));
+        aType->targets[0] = "sheep";
+        aType->color = SDL_MapRGB(sim->screen->format, 255, 0, 0);
+        push(sim,createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h)));
+    }
     run(sim, update);
 
     free_simulation(sim);

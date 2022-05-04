@@ -15,6 +15,8 @@ typedef struct agentType{
     float hearingRange;
     char** targets;
     int targetAmount;
+    int dying;
+    Uint32 color;
 } agentType;
 
 typedef struct agent{
@@ -39,5 +41,9 @@ int popWithId(struct agentLinkedList* list, int id, agent* res);
 void freeLinkedList(struct agentLinkedList* agentLinkedList);
 void drawAgents(SDL_Surface* screen, struct agentLinkedList* list);
 int agentBehave(agent* mainAgent, simulation* sim);
+int moveTowards(agent* agent, int x, int y);
+int canSeeAgent(agent* mainAgent, agent* targetAgent);
+int tryMate(agent* mainAgent, simulation* sim);
+void freeAgent(agent* agt);
 
 #endif //SEGFAULTPROJECT_AGENT_H
