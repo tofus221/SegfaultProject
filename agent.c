@@ -266,7 +266,7 @@ int tryFeed(agent* mainAgent, simulation* sim)
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
-        if (mainAgent == currAgent)
+        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)))
         {
             continue;
         }
@@ -294,7 +294,7 @@ int tryMate(agent* mainAgent, simulation* sim)
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
-        if (mainAgent == currAgent)
+        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)))
         {
             continue;
         }
