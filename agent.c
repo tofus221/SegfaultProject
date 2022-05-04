@@ -6,6 +6,7 @@
 #include "agent.h"
 #include "SDL/SDL.h"
 #include "engine.h"
+#include "time.h"
 
 #define GENETICDRIFT 0.01
 #define REPRODUCTION_THRESHOLD 200.0f
@@ -131,9 +132,62 @@ int popWithId(struct agentLinkedList* list, int id, agent** res){
     return 0;
 }
 
+//return the agent with the ID given without popping it off the list. return NULL if the list is empty or no agent with ID is found.
+agent* peekWithID(struct agentLinkedList* list, int id){
+    if (list->next == NULL){
+        printf("peekWithID: The list is empty.\n");
+        return NULL;
+    }
+
+    struct agentLinkedList* tmp = list->next;
+    while (tmp->next != NULL){
+        if (tmp->agent->id == id)
+            return tmp->agent;
+        tmp = tmp->next;
+    }
+    if (tmp->agent->id != id) {
+        printf("peekWithID: No agents with this ID was found.\n");
+        return NULL;
+    }
+    return tmp->agent;
+}
+
+void freeAgentTypes(struct agentLinkedList* agentLinkedList){
+    if (agentLinkedList->next == NULL)
+        return;
+    agentType** typeList = malloc(sizeof(agentType*));
+    int i = 0;
+    int toAdd = 1;
+    struct agentLinkedList* tmp = agentLinkedList->next;
+    while (tmp != NULL){
+        agent* agent = tmp->agent;
+        for (int j = 0; j < i; ++j) {
+            if (typeList[j] == agent->type) {
+                toAdd = 0;
+                break;
+            }
+        }
+        if (toAdd){
+            i++;
+            typeList = realloc(typeList, sizeof(agentType)*i);
+            typeList[i-1] = agent->type;
+        }
+        toAdd = 1;
+        tmp = tmp->next;
+    }
+
+    for (int j = 0; j < i; ++j) {
+        free(typeList[j]);
+    }
+    free(typeList);
+};
+
 //free the linked list.
 void freeLinkedList(struct agentLinkedList* agentLinkedList){
+    if (agentLinkedList->next == NULL)
+        return;
     struct agentLinkedList* parent;
+    freeAgentTypes(agentLinkedList);
     while (agentLinkedList->next != NULL){
         parent = agentLinkedList;
         agentLinkedList = agentLinkedList->next;
@@ -167,9 +221,9 @@ float geneticDrift(float value){
     float newValue = value;
     float drift = value * GENETICDRIFT;
     if (rand()%2)
-        newValue += (float)rand()/(float)(RAND_MAX/drift);
+        newValue += drift;
     else
-        newValue -= (float)rand()/(float)(RAND_MAX/drift);
+        newValue -= drift;
     return newValue;
 }
 
@@ -239,10 +293,14 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
     //srand(time(0)); //initialize the random generator
     agentType* newType;
-    if (rand()%2) //pick if there will be drift or not
+    if (rand()%2){ //pick if there will be drift or not
+        printf("geneticDrift\n");
         newType = reproductionWithGeneticDrift(agent1, agent2);
-    else
+    }
+    else {
+        printf("normal\n");
         newType = normalReproduction(agent1, agent2);
+    }
     agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
     newAgent->type->energy = REPRODUCTION_THRESHOLD; //TEMPORARY
     newAgent->type->targetAmount = agent1->type->targetAmount;

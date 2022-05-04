@@ -30,6 +30,7 @@ simulation *initEngine()
     simulation *sim = malloc(sizeof(simulation));
     sim->screen = screen;
     sim->agentList = initLinkedList();
+    sim->popCount = 0;
     return sim;
 }
 

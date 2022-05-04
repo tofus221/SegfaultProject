@@ -54,7 +54,6 @@ void update(simulation *sim)
         {
             if (al->agent->type->energy <= 0.0f)
             {
-                printf("DIE\n");
                 struct agentLinkedList *temp = al;
                 al = al->next;
                 agent* res;
