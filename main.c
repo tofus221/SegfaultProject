@@ -37,9 +37,9 @@ void update(simulation *sim)
         dy *= -1;
     }
     
-    while (sim->popCount < 100)
+    while (sim->popCount < 500)
     {
-        agentType* aType = createAgentType("sheep",100,300,3,6,100);
+        agentType* aType = createAgentType("sheep",100,100,3,6,100);
         aType->targetAmount = 0;
         aType->color = SDL_MapRGB(sim->screen->format, 0, 255, 0);
         push(sim,createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h)));
@@ -82,9 +82,9 @@ int main()
 {
     srand(time(0));
     simulation *sim = initEngine();
-    for (size_t i = 0; i < 3; i++)
+    for (size_t i = 0; i < 50; i++)
     {
-        agentType* aType = createAgentType("wolf",1000,1000,4,6,40);
+        agentType* aType = createAgentType("wolf",1000,1000,4,6,100);
         aType->targetAmount = 1;
         aType->targets = calloc(aType->targetAmount, sizeof(char*));
         aType->targets[0] = "sheep";
