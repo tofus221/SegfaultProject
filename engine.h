@@ -15,4 +15,5 @@ simulation *initEngine();
 void free_simulation(simulation *sim);
 void run(simulation *sim, void (*update)(simulation *));
 
+#include "agent.h"
 #endif
