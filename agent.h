@@ -23,6 +23,8 @@ typedef struct agent{
     agentType* type;
     int Xpos;
     int Ypos;
+    int wanderX;
+    int wanderY;
 }agent;
 
 struct agentLinkedList{
@@ -44,5 +46,6 @@ int moveTowards(agent* agent, int x, int y);
 int canSeeAgent(agent* mainAgent, agent* targetAgent);
 int tryMate(agent* mainAgent, simulation* sim);
 void freeAgent(agent* agt);
+void doWander(agent* mainAgent, simulation* sim);
 
 #endif //SEGFAULTPROJECT_AGENT_H

@@ -31,6 +31,8 @@ agent* createAgent(agentType* type, int x, int y){
     newAgent->type = type;
     newAgent->Xpos = x;
     newAgent->Ypos = y;
+    newAgent->wanderX = -1;
+    newAgent->wanderY = -1;
     return newAgent;
 }
 
@@ -437,8 +439,18 @@ int agentBehave(agent* mainAgent, simulation* sim)
     {
         return 1;
     }
-    moveTowards(mainAgent,rand() % (sim->screen->w),rand() % (sim->screen->h));
-    
+    doWander(mainAgent,sim);
     return 0;
     
+}
+
+
+void doWander(agent* mainAgent, simulation* sim)
+{
+    if (mainAgent->wanderX == mainAgent->Xpos || mainAgent->wanderX == -1 || mainAgent->wanderY == mainAgent->Ypos)
+    {
+        mainAgent->wanderX = rand() % (sim->screen->w);
+        mainAgent->wanderY = rand() % (sim->screen->h);
+    }
+    moveTowards(mainAgent,mainAgent->wanderX,mainAgent->wanderY);
 }
