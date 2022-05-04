@@ -12,7 +12,7 @@
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance, float hRange){
-    agentType* newAgent = malloc(sizeof (agentType));
+    agentType* newAgent = malloc(sizeof(agentType));
     memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
     newAgent->lifeSpan = lifeSpan;
@@ -35,8 +35,6 @@ agent* createAgent(agentType* type, int x, int y){
 
 void freeAgentType(agentType* agentT)
 {
-    //free(agentT->targets);
-    //free(agentT->name);
     free(agentT);
 }
 
@@ -60,17 +58,37 @@ struct agentLinkedList* initLinkedList(){
     return list;
 }
 
+int getNewID(simulation* sim)
+{
+    int attemptID = rand();
+    int isValid = 0;
+    while(!isValid)
+    {
+        struct agentLinkedList* list = sim->agentList;
+        isValid = 1;
+        for (struct agentLinkedList* curr = list->next; curr != NULL && isValid; curr = curr->next)
+        {
+            isValid = curr->agent->id != attemptID;
+        }
+    }
+    return attemptID;
+    
+}
+
+
 //push an agent to the list.
-void push(simulation* simulation1, agent* agentToAdd){
-    struct agentLinkedList* tmp = simulation1->agentList;
-    struct agentLinkedList* toAdd = malloc(sizeof(struct agentLinkedList));
-    toAdd->next = NULL;
-    toAdd->agent = agentToAdd;
-    while (tmp->next != NULL)
-        tmp = tmp->next;
-    tmp->next = toAdd;
-    simulation1->popCount++;
-    agentToAdd->id = simulation1->popCount;
+void push(simulation* sim, agent* agent){
+    struct agentLinkedList* list = sim->agentList;
+    struct agentLinkedList* newBlock = malloc(sizeof(struct agentLinkedList));
+    newBlock->next = NULL;
+    if (list->next != NULL)
+    {
+        newBlock->next = list->next;
+    }
+    list->next = newBlock;
+    newBlock->agent = agent;
+    agent->id = getNewID(sim);
+    sim->popCount++;
 }
 
 //pops an agent in the list and return it in the res argument.
@@ -93,27 +111,23 @@ int pop(struct agentLinkedList* list, agent* res){
 
 }
 
+
 //pops an agents in the list with the following id and return it in the res argument
 //return 0 if everything went well, -1 otherwise.
-int popWithId(struct agentLinkedList* list, int id, agent* res){
-    if (list->next == NULL) {
-        printf("popWithId: you are trying to pop an empty list.\n");
-        return -1;
-    }
-
-    struct agentLinkedList* tmp = list->next; //skip the sentinel
+int popWithId(struct agentLinkedList* list, int id, agent** res){
     struct agentLinkedList* parent = list;
-    while (tmp->agent->id != id && tmp->next != NULL){
-        parent = tmp;
-        tmp = tmp->next;
+    for (struct agentLinkedList* curr = list->next; curr != NULL; parent = curr, curr = curr->next)
+    {
+        if (curr->agent->id == id)
+        {
+            parent->next = curr->next;
+            *res = curr->agent;
+            printf("DED\n");
+            free(curr);
+            return 1;
+        }
+        
     }
-    if (tmp->next == NULL && tmp->agent->id != id) {
-        printf("popWithId: no agents with this ID have been found\n");
-        return -1;
-    }
-    parent->next = tmp->next;
-    res = tmp->agent;
-    free(tmp);
     return 0;
 }
 
@@ -252,12 +266,12 @@ int moveTowards(agent* agent, int x, int y)
     {
         double ratio = (double)agent->type->speed / distance;
         moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio));
-        agent->type->energy -= 10; //agent->type->speed * agent->type->speed;
+        agent->type->energy -= 1; //agent->type->speed * agent->type->speed;
         return 0;
     }
     agent->Xpos = x;
     agent->Ypos = y;
-    agent->type->energy -= 10;  //(float) distance * distance;
+    agent->type->energy -= 1;  //(float) distance * distance;
     return 1;
 }
 
@@ -302,8 +316,9 @@ int tryFeed(agent* mainAgent, simulation* sim)
         if(moveTowards(mainAgent,target->Xpos,target->Ypos))
         {
             mainAgent->type->energy += target->type->energy;
-            popWithId(sim->agentList,target->id,target);
-            free(target);
+            popWithId(sim->agentList,target->id,&target);
+            sim->popCount--;
+            freeAgent(target);
         }
         return 1;
     }

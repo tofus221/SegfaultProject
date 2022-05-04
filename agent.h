@@ -15,7 +15,6 @@ typedef struct agentType{
     float hearingRange;
     char** targets;
     int targetAmount;
-    int dying;
     Uint32 color;
 } agentType;
 
@@ -35,9 +34,9 @@ agentType* createAgentType(char* name, float lifeSpan, float energy, float speed
 agent* createAgent(agentType* type, int x, int y);
 void moveAgent(agent* agent, int addX, int addY);
 struct agentLinkedList* initLinkedList();
-void push(simulation* simulation1, agent* agentToAdd);
+void push(simulation* sim, agent* agent);
 int pop(struct agentLinkedList* list, agent* res);
-int popWithId(struct agentLinkedList* list, int id, agent* res);
+int popWithId(struct agentLinkedList* list, int id, agent** res);
 void freeLinkedList(struct agentLinkedList* agentLinkedList);
 void drawAgents(SDL_Surface* screen, struct agentLinkedList* list);
 int agentBehave(agent* mainAgent, simulation* sim);

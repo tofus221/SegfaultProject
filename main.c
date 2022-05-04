@@ -48,20 +48,21 @@ void update(simulation *sim)
     //put_pixel(screen, x, y, color);
     for (struct agentLinkedList *al = sim->agentList->next; al != NULL;)
     {
-        /*
-        if (al->agent->type->energy <= 0.0f)
-        {
-            struct agentLinkedList *temp = al;
-            al = al->next;
-            agent* res;
-            popWithId(sim->agentList,temp->agent->id,res);
-            //freeAgent(res);
-            sim->popCount--;
-            continue;
-        }
-        */
+        
+        
         if (strcmp(al->agent->type->name, "wolf") == 0)
         {
+            if (al->agent->type->energy <= 0.0f)
+            {
+                printf("DIE\n");
+                struct agentLinkedList *temp = al;
+                al = al->next;
+                agent* res;
+                popWithId(sim->agentList,temp->agent->id,&res);
+                freeAgent(res);
+                sim->popCount--;
+                continue;
+            }
             int res = agentBehave(al->agent,sim);
         }
         else
