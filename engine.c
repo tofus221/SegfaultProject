@@ -76,7 +76,7 @@ void run(simulation *sim, void (*update)(simulation *))
     {
         getEvents();
 
-        Uint32 white = SDL_MapRGB(sim->screen->format, 255, 255, 255);
+        Uint32 white = SDL_MapRGB(sim->screen->format, 0, 0, 0);
         SDL_FillRect(sim->screen, NULL, white);
 
         (*update)(sim);

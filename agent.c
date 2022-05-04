@@ -9,7 +9,7 @@
 #include "time.h"
 
 #define GENETICDRIFT 0.01
-#define REPRODUCTION_THRESHOLD 200.0
+#define REPRODUCTION_THRESHOLD 200.0f
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance, float hRange){
@@ -36,8 +36,8 @@ agent* createAgent(agentType* type, int x, int y){
 
 void freeAgentType(agentType* agentT)
 {
-    free(agentT->targets);
-    free(agentT->name);
+    //free(agentT->targets);
+    //free(agentT->name);
     free(agentT);
 }
 
@@ -187,19 +187,18 @@ void freeLinkedList(struct agentLinkedList* agentLinkedList){
 void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
     if (list->next == NULL) //check if the list is empty
         return;
-    Uint32 color = SDL_MapRGB(screen->format, 255, 0, 0); //temporary, should be really cool to be able to put an image instead
+    //Uint32 color = SDL_MapRGB(screen->format, 255, 0, 0); temporary, should be really cool to be able to put an image instead
     SDL_Rect rect;
     rect.w = 2;
     rect.h = 2;
 
-    struct agentLinkedList* tmp = list->next; // skip the sentinel
-    agent* agent;
-    while (tmp->next != NULL){
-        agent = tmp->agent;
+        agent* agent = list->agent;
+    while (list != NULL){
+    list = list->next; // skip the sentinel
         rect.x = (Sint16)agent->Xpos; //weird cast but my IDE seems more fine with it than without, might just be fine tho
         rect.y = (Sint16)agent->Ypos;
-        SDL_FillRect(screen, &rect, color);
-        tmp = tmp->next;
+        list = list->next;
+        SDL_FillRect(screen, &rect, agent->type->color);
     }
     agent = tmp->agent;
     rect.x = (Sint16)agent->Xpos;
@@ -208,7 +207,7 @@ void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
 }
 
 float geneticDrift(float value){
-    srand(time(0));
+    //srand(time(0));
     float newValue = value;
     float drift = value * GENETICDRIFT;
     if (rand()%2)
@@ -282,7 +281,7 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
 }
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
-    srand(time(NULL)); //initialize the random generator
+    //srand(time(0)); //initialize the random generator
     agentType* newType;
     if (rand()%2){ //pick if there will be drift or not
         printf("geneticDrift\n");
@@ -293,12 +292,21 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
         newType = normalReproduction(agent1, agent2);
     }
     agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
+    newAgent->type->energy = REPRODUCTION_THRESHOLD; //TEMPORARY
+    newAgent->type->targetAmount = agent1->type->targetAmount;
+    newAgent->type->targets = agent1->type->targets;
+    newAgent->type->color = agent1->type->color;
     push(sim, newAgent);
 };
 
 
 int moveTowards(agent* agent, int x, int y)
 {
+    if (agent->type->speed <= 0)
+    {
+        return 0;
+    }
+    
     double xOFF = (double)x-agent->Xpos;
     double yOFF = (double)y-agent->Ypos;
     double distance = sqrt(xOFF*xOFF + yOFF*yOFF);
@@ -306,12 +314,12 @@ int moveTowards(agent* agent, int x, int y)
     {
         double ratio = (double)agent->type->speed / distance;
         moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio));
-        agent->type->energy -= agent->type->speed * agent->type->speed;
+        agent->type->energy -= 10; //agent->type->speed * agent->type->speed;
         return 0;
     }
     agent->Xpos = x;
     agent->Ypos = y;
-    agent->type->energy -= (float) distance * distance;
+    agent->type->energy -= 10;  //(float) distance * distance;
     return 1;
 }
 
@@ -321,69 +329,96 @@ int canSeeAgent(agent* mainAgent, agent* targetAgent)
     int xOffset = targetAgent->Xpos - mainAgent->Xpos;
     int yOffset = targetAgent->Ypos - mainAgent->Ypos;
     double distance = sqrt((double)xOffset*xOffset + yOffset*yOffset);
-    return distance <= mainAgent->type->hearingRange;
+    return distance <= (double)mainAgent->type->hearingRange;
 }
 
 int tryFeed(agent* mainAgent, simulation* sim)
 {
+    agent* target = NULL;
+    double minDist = 0;
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
-        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)))
+        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)) || currAgent->type->lifeSpan == 0)
         {
             continue;
         }
 
         for (int i = 0; i < mainAgent->type->targetAmount; i++)
         {
-            if (strcmp(mainAgent->type->targets[i],currAgent->type->name))
+            if (strcmp(mainAgent->type->targets[i],currAgent->type->name) == 0)
             {
-                if(moveTowards(mainAgent,currAgent->Xpos,currAgent->Ypos))
+                int xOffset = currAgent->Xpos - mainAgent->Xpos;
+                int yOffset = currAgent->Ypos - mainAgent->Ypos;
+                double distance = sqrt((double)xOffset*xOffset + yOffset*yOffset);
+                if (target == NULL || minDist > distance)
                 {
-                    mainAgent->type->energy += currAgent->type->energy;
-                    popWithId(sim->agentList,currAgent->id,currAgent);
-                    freeAgent(currAgent);
-                    sim->popCount--;
+                    minDist = distance;
+                    target = currAgent;
                 }
-                return 1;
             }
         }
     }
+    if (target != NULL)
+    {
+        if(moveTowards(mainAgent,target->Xpos,target->Ypos))
+        {
+            mainAgent->type->energy += target->type->energy;
+            popWithId(sim->agentList,target->id,target);
+            free(target);
+        }
+        return 1;
+    }
+    
     return 0;
 }
 
 int tryMate(agent* mainAgent, simulation* sim)
 {
+    agent* target = NULL;
+    double minDist = 0;
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
-        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)))
+        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent) || currAgent->type->lifeSpan == 0))
         {
             continue;
         }
-
-        if (strcmp(mainAgent->type->name,currAgent->type->name) && (currAgent->type->energy > REPRODUCTION_THRESHOLD))
+        if ((strcmp(mainAgent->type->name,currAgent->type->name) == 0) && (currAgent->type->energy > REPRODUCTION_THRESHOLD))
         {
-            if (moveTowards(mainAgent, currAgent->Xpos, currAgent->Ypos))
+            int xOffset = currAgent->Xpos - mainAgent->Xpos;
+            int yOffset = currAgent->Ypos - mainAgent->Ypos;
+            double distance = sqrt((double)xOffset*xOffset + yOffset*yOffset);
+            if (target == NULL || minDist > distance)
             {
-                reproduction(mainAgent,currAgent,sim);
-                mainAgent->type->energy -= REPRODUCTION_THRESHOLD / 2;
-                currAgent->type->energy -= REPRODUCTION_THRESHOLD / 2;
+                minDist = distance;
+                target = currAgent;
             }
-            return 1;
         }
     }
+    if (target != NULL)
+    {
+        if (moveTowards(mainAgent, target->Xpos, target->Ypos))
+        {
+            reproduction(mainAgent,target,sim);
+            mainAgent->type->energy -= REPRODUCTION_THRESHOLD / 2;
+            target->type->energy -= REPRODUCTION_THRESHOLD / 2;
+        }
+        return 1;
+    }
+    
     return 0;
 }
 
 // makes an agent behave; returns 2 when trying to mate, 1 when trying to feed, and 0 when wandering.
 int agentBehave(agent* mainAgent, simulation* sim)
-{
-    srand(time(0));
+{  
+    //printf("behave\n");
     if (mainAgent->type->energy > REPRODUCTION_THRESHOLD)
     {
         if (tryMate(mainAgent, sim))
         {
+            //printf("mated\n");
             return 2;
         }
     }
@@ -391,7 +426,8 @@ int agentBehave(agent* mainAgent, simulation* sim)
     {
         return 1;
     }
-    moveTowards(mainAgent,rand(),rand());
-    return 1;
+    moveTowards(mainAgent,rand() % (sim->screen->w),rand() % (sim->screen->h));
+    
+    return 0;
     
 }
