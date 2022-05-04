@@ -1,48 +1,28 @@
 #include <stdio.h>
+#include <time.h>
 #include "engine.h"
-#include "pixelOp.h"
+#include "perlin.h"
+#include <math.h>
 
-int x = 180, y = 328;
-int dx = 1, dy = 2;
+#define W_WIDTH 700
+#define W_HEIGHT 700
 
+SDL_Surface *terrain;
+Uint8 r = 0;
 void update(simulation *sim)
 {
-    SDL_Surface *screen = sim->screen;
-    Uint32 color = SDL_MapRGB(screen->format, 255, 255, 255);
-
-    x += dx;
-    y += dy;
-
-    if(x < 0)
-    {
-        x = 0;
-        dx *= -1;
-    }
-    if(x >= screen->w)
-    {
-        x = screen->w - 1;
-        dx *= -1;
-    }
-    if(y < 0)
-    {
-        y = 0;
-        dy *= -1;
-    }
-    if(y >= screen->h)
-    {
-        y = screen->h - 1;
-        dy *= -1;
-    }
-
-    put_pixel(screen, x, y, color);
+    SDL_BlitSurface(terrain, NULL, sim->screen, NULL);
 }
 
 int main()
 {
-    simulation *sim = initEngine(500, 500);
+    terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
+    simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
 
     run(sim, update);
 
     free_simulation(sim);
+    
+    SDL_FreeSurface(terrain);
     return 0;
 }
