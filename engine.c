@@ -22,6 +22,7 @@ static int loop = 1;
 
 simulation *initEngine(int w, int h)
 {
+    loop = 1;
     SDL_Surface *screen;
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == -1)
     {
@@ -178,7 +179,6 @@ void run(simulation *sim, void (*update)(simulation *))
         if(!sim->isPaused)
         {
             SDL_FillRect(sim->screen, NULL, BLACK);
-
             (*update)(sim);
             
         }
@@ -188,4 +188,6 @@ void run(simulation *sim, void (*update)(simulation *))
         SDL_Delay(time_left());
         next_time += sim->tickInterval;
     }
+
+	
 }

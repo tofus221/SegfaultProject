@@ -1,11 +1,12 @@
 CC = gcc -g
 
 CPPFLAGS= `pkg-config --cflags sdl` -MMD
-CFLAGS= -Wall -Wextra -std=c99 -O3 
+CFLAGS= `pkg-config --cflags gtk+-3.0` -Wall -Wextra -std=c99 -O3 
 LDFLAGS=
-LDLIBS= `pkg-config --libs sdl SDL_image` -lm
+LDLIBS= `pkg-config --libs sdl gtk+-3.0` -lm -lgtk-3
 
-OBJ = pixelOp.o engine.o perlin.o main.o
+
+OBJ = pixelOp.o engine.o perlin.o main.o interface.o
 DEP = ${OBJ:.o=.d}
 EXE = main
 
