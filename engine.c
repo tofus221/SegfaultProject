@@ -181,7 +181,7 @@ void run(simulation *sim, void (*update)(simulation *))
 
         if(!sim->isPaused)
         {
-            SDL_FillRect(sim->screen, NULL, WHITE);
+            SDL_FillRect(sim->screen, NULL, BLACK);
 
             (*update)(sim);
             

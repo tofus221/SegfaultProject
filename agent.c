@@ -4,18 +4,19 @@
 #include <math.h>
 #include <time.h>
 #include "agent.h"
-#include "SDL/SDL.h"
+#include <SDL/SDL.h>
 #include "engine.h"
-#include "time.h"
+#include <time.h>
 
 #define GENETICDRIFT 0.01
 #define REPRODUCTION_THRESHOLD 200.0f
 
 //create an Agent Type, meant to be used with the interface.
-agentType* createAgentType(char* name, float lifeSpan, float energy, float speed, float resistance, float hRange){
+agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange){
     agentType* newAgent = malloc(sizeof(agentType));
     memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
+    newAgent->typeId = typeId;
     newAgent->lifeSpan = lifeSpan;
     newAgent->energy = energy;
     newAgent->speed = speed;
@@ -38,6 +39,7 @@ agent* createAgent(agentType* type, int x, int y){
 
 void freeAgentType(agentType* agentT)
 {
+    free(agentT->targetsId);
     free(agentT);
 }
 
@@ -96,7 +98,7 @@ void push(simulation* sim, agent* agent){
 
 //pops an agent in the list and return it in the res argument.
 //return 0 if everything went well, -1 otherwise.
-int pop(struct agentLinkedList* list, agent* res){
+int pop(struct agentLinkedList* list, agent** res){
     if (list->next == NULL) {
         printf("pop: you are trying to pop an empty list\n");
         return -1;
@@ -108,7 +110,7 @@ int pop(struct agentLinkedList* list, agent* res){
         tmp = tmp->next;
     }
     parent->next = NULL;
-    res = tmp->agent;
+    *res = tmp->agent;
     free(tmp);
     return 0;
 
@@ -125,7 +127,7 @@ int popWithId(struct agentLinkedList* list, int id, agent** res){
         {
             parent->next = curr->next;
             *res = curr->agent;
-            printf("DED\n");
+            printf("DED, %s\n", curr->agent->type->name);
             free(curr);
             return 1;
         }
@@ -154,50 +156,18 @@ agent* peekWithID(struct agentLinkedList* list, int id){
     return tmp->agent;
 }
 
-void freeAgentTypes(struct agentLinkedList* agentLinkedList){
-    if (agentLinkedList->next == NULL)
-        return;
-    agentType** typeList = malloc(sizeof(agentType*));
-    int i = 0;
-    int toAdd = 1;
-    struct agentLinkedList* tmp = agentLinkedList->next;
-    while (tmp != NULL){
-        agent* agent = tmp->agent;
-        for (int j = 0; j < i; ++j) {
-            if (typeList[j] == agent->type) {
-                toAdd = 0;
-                break;
-            }
-        }
-        if (toAdd){
-            i++;
-            typeList = realloc(typeList, sizeof(agentType)*i);
-            typeList[i-1] = agent->type;
-        }
-        toAdd = 1;
-        tmp = tmp->next;
-    }
-
-    for (int j = 0; j < i; ++j) {
-        free(typeList[j]);
-    }
-    free(typeList);
-};
-
 //free the linked list.
 void freeLinkedList(struct agentLinkedList* agentLinkedList){
     if (agentLinkedList->next == NULL)
         return;
     struct agentLinkedList* parent;
-    freeAgentTypes(agentLinkedList);
-    while (agentLinkedList->next != NULL){
+    while (agentLinkedList != NULL){
         parent = agentLinkedList;
         agentLinkedList = agentLinkedList->next;
-        freeAgent(parent->agent);
+        if (parent->agent != NULL)
+            freeAgent(parent->agent);
         free(parent);
     }
-    free(agentLinkedList->agent);
-    free(agentLinkedList);
 }
 
 void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
@@ -247,49 +217,39 @@ agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
         newHrange = geneticDrift(agentType2->hearingRange);
         
     }
-    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
+    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
 }
 
 agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
     float newLifeSpan, newEnergy, newSpeed, newResistance, newHrange;
     agentType* agentType1 = agent1->type;
     agentType* agentType2 = agent2->type;
-    for (int i = 0; i < 5; i++) {
-        switch (i) {
-            case 0:
-                if (rand()%2)
-                    newLifeSpan = agentType1->lifeSpan;
-                else
-                    newLifeSpan = agentType2->lifeSpan;
-                break;
-            case 1:
-                if (rand()%2)
-                    newEnergy = agentType1->energy;
-                else
-                    newEnergy= agentType2->energy;
-                break;
-            case 2:
-                if (rand()%2)
-                    newSpeed = agentType1->speed;
-                else
-                    newSpeed = agentType2->speed;
-                break;
-            case 3:
-                if (rand()%2)
-                    newResistance = agentType1->resistance;
-                else
-                    newResistance = agentType2->resistance;
-                break;
-            default:
-                if (rand()%2)
-                    newHrange = agentType1->hearingRange;
-                else
-                    newHrange = agentType2->hearingRange;
-                break;
-        }
-    }
+    if (rand()%2)
+        newLifeSpan = agentType1->lifeSpan;
+    else
+        newLifeSpan = agentType2->lifeSpan;
+    
+    if (rand()%2)
+        newEnergy = agentType1->energy;
+    else
+        newEnergy= agentType2->energy;
+    
+    if (rand()%2)
+        newSpeed = agentType1->speed;
+    else
+        newSpeed = agentType2->speed;
+    
+    if (rand()%2)
+        newResistance = agentType1->resistance;
+    else
+        newResistance = agentType2->resistance;
+    
+    if (rand()%2)
+        newHrange = agentType1->hearingRange;
+    else
+        newHrange = agentType2->hearingRange;
 
-    return createAgentType(agentType1->name, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
+    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
 }
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
@@ -306,7 +266,12 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
     agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
     newAgent->type->energy = REPRODUCTION_THRESHOLD; //TEMPORARY
     newAgent->type->targetAmount = agent1->type->targetAmount;
-    newAgent->type->targets = agent1->type->targets;
+    newAgent->type->targetsId = calloc(agent1->type->targetAmount, sizeof(int));
+    for (int i = 0; i < agent1->type->targetAmount; i++)
+    {
+        newAgent->type->targetsId[i] = agent1->type->targetsId[i];
+    }
+    
     newAgent->type->color = agent1->type->color;
     push(sim, newAgent);
 };
@@ -358,7 +323,7 @@ int tryFeed(agent* mainAgent, simulation* sim)
 
         for (int i = 0; i < mainAgent->type->targetAmount; i++)
         {
-            if (strcmp(mainAgent->type->targets[i],currAgent->type->name) == 0)
+            if (mainAgent->type->targetsId[i] == currAgent->type->typeId)
             {
                 int xOffset = currAgent->Xpos - mainAgent->Xpos;
                 int yOffset = currAgent->Ypos - mainAgent->Ypos;
@@ -397,7 +362,7 @@ int tryMate(agent* mainAgent, simulation* sim)
         {
             continue;
         }
-        if ((strcmp(mainAgent->type->name,currAgent->type->name) == 0) && (currAgent->type->energy > REPRODUCTION_THRESHOLD))
+        if ((mainAgent->type->typeId == currAgent->type->typeId) && (currAgent->type->energy > REPRODUCTION_THRESHOLD))
         {
             int xOffset = currAgent->Xpos - mainAgent->Xpos;
             int yOffset = currAgent->Ypos - mainAgent->Ypos;

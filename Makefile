@@ -1,4 +1,4 @@
-CC = gcc -g
+CC = gcc -g #-fsanitize=address
 
 CPPFLAGS= `pkg-config --cflags sdl` -MMD
 CFLAGS= -Wall -Wextra -std=c99 -O3 
