@@ -4,39 +4,20 @@
 #include "engine.h"
 #include "pixelOp.h"
 #include "agent.h"
+#include "perlin.h"
+#include <math.h>
 
-int x = 180, y = 328;
-int dx = 1, dy = 2;
+#define W_WIDTH 700
+#define W_HEIGHT 700
 
+SDL_Surface *terrain;
+Uint8 r = 0;
 void update(simulation *sim)
 {
     SDL_Surface *screen = sim->screen;
     Uint32 color = SDL_MapRGB(screen->format, 255, 255, 255);
 
-    x += dx;
-    y += dy;
-
-    if(x < 0)
-    {
-        x = 0;
-        dx *= -1;
-    }
-    if(x >= screen->w)
-    {
-        x = screen->w;
-        dx *= -1;
-    }
-    if(y < 0)
-    {
-        y = 0;
-        dy *= -1;
-    }
-    if(y >= screen->h)
-    {
-        y = screen->h;
-        dy *= -1;
-    }
-    
+   
     while (sim->popCount < 500)
     {
         agentType* aType = createAgentType("sheep",100,100,3,6,100);
@@ -45,7 +26,6 @@ void update(simulation *sim)
         push(sim,createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h)));
     }
     
-    //put_pixel(screen, x, y, color);
     for (struct agentLinkedList *al = sim->agentList->next; al != NULL;)
     {
         
@@ -73,15 +53,12 @@ void update(simulation *sim)
     }
     
     drawAgents(sim->screen,sim->agentList);
-
-
-
 }
 
 int main()
 {
     srand(time(0));
-    simulation *sim = initEngine();
+    simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
     for (size_t i = 0; i < 50; i++)
     {
         agentType* aType = createAgentType("wolf",1000,1000,4,6,100);
@@ -94,5 +71,7 @@ int main()
     run(sim, update);
 
     free_simulation(sim);
+    
+    SDL_FreeSurface(terrain);
     return 0;
 }
