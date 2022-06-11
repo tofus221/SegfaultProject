@@ -18,7 +18,7 @@ void update(simulation *sim)
     SDL_BlitSurface(terrain, NULL, screen, NULL);
     while (sim->popCount < 500)
     {
-        agentType* aType = createAgentType("sheep", 2, 100,100,3,6,100);
+        agentType* aType = createAgentType("sheep", 2, 100,100,3,6,100, 1, 1, 1);
         aType->targetAmount = 0;
         aType->color = SDL_MapRGB(screen->format, 0, 255, 0);
         push(sim,createAgent(aType,rand() % (screen->w),rand() % (screen->h)));
@@ -63,7 +63,7 @@ int main()
     simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
     for (size_t i = 0; i < 50; i++)
     {
-        agentType* aType = createAgentType("wolf", 1, 1000,1000,4,6, 100);
+        agentType* aType = createAgentType("wolf", 1, 1000,1000,4,6, 100, 1, 1, 1);
         aType->targetAmount = 1;
         aType->targetsId = calloc(aType->targetAmount, sizeof(int));
         aType->targetsId[0] = 2;

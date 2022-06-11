@@ -2,17 +2,19 @@
 #include <stdio.h>
 #include <memory.h>
 #include <math.h>
-#include <time.h>
 #include "agent.h"
 #include <SDL/SDL.h>
 #include "engine.h"
-#include <time.h>
 
 #define GENETICDRIFT 0.01
 #define REPRODUCTION_THRESHOLD 200.0f
 
+/*float birthRate;
+float birthCost;
+float individualBirthCost;*/
+
 //create an Agent Type, meant to be used with the interface.
-agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange){
+agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange, int birthRate, float birthCost, float individualBirthCost){
     agentType* newAgent = malloc(sizeof(agentType));
     memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
@@ -22,6 +24,9 @@ agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy,
     newAgent->speed = speed;
     newAgent->resistance = resistance;
     newAgent->hearingRange = hRange;
+    newAgent->birthRate = birthRate;
+    newAgent->birthCost = birthCost;
+    newAgent->individualBirthCost = individualBirthCost;
     return newAgent;
 }
 
@@ -217,7 +222,9 @@ agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
         newHrange = geneticDrift(agentType2->hearingRange);
         
     }
-    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
+    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
+                           newSpeed, newResistance, newHrange, agent1->type->birthRate,
+                           agent1->type->birthCost, agent1->type->individualBirthCost);
 }
 
 agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
@@ -249,31 +256,39 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
     else
         newHrange = agentType2->hearingRange;
 
-    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
+    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
+                           newSpeed, newResistance, newHrange, agent1->type->birthRate,
+                           agent1->type->birthCost, agent1->type->individualBirthCost);
 }
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
-    //srand(time(0)); //initialize the random generator
-    agentType* newType;
-    if (rand()%2){ //pick if there will be drift or not
-        printf("geneticDrift\n");
-        newType = reproductionWithGeneticDrift(agent1, agent2);
+    agent1->type->energy -= agent1->type->birthCost;
+    for (int i = 0; i < agent1->type->birthRate; ++i) {
+        if (rand() % 2){
+            agentType* newType;
+            if (rand()%2){ //pick if there will be drift or not
+                printf("geneticDrift\n");
+                newType = reproductionWithGeneticDrift(agent1, agent2);
+            }
+            else {
+                printf("normal\n");
+                newType = normalReproduction(agent1, agent2);
+            }
+            agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
+            //newAgent->type->energy = REPRODUCTION_THRESHOLD; //TEMPORARY, idk why this is here lol
+            newAgent->type->targetAmount = agent1->type->targetAmount;
+            newAgent->type->targetsId = calloc(agent1->type->targetAmount, sizeof(int));
+            for (int i = 0; i < agent1->type->targetAmount; i++)
+            {
+                newAgent->type->targetsId[i] = agent1->type->targetsId[i];
+            }
+
+            newAgent->type->color = agent1->type->color;
+            push(sim, newAgent);
+
+            agent1->type->energy -= agent1->type->individualBirthCost;
+        }
     }
-    else {
-        printf("normal\n");
-        newType = normalReproduction(agent1, agent2);
-    }
-    agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
-    newAgent->type->energy = REPRODUCTION_THRESHOLD; //TEMPORARY
-    newAgent->type->targetAmount = agent1->type->targetAmount;
-    newAgent->type->targetsId = calloc(agent1->type->targetAmount, sizeof(int));
-    for (int i = 0; i < agent1->type->targetAmount; i++)
-    {
-        newAgent->type->targetsId[i] = agent1->type->targetsId[i];
-    }
-    
-    newAgent->type->color = agent1->type->color;
-    push(sim, newAgent);
 };
 
 
