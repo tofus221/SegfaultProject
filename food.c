@@ -1,6 +1,5 @@
 #include "food.h"
 #include <stdlib.h>
-#include "pixelOp.h"
 #include <math.h>
 
 struct foodNode* initFoodList(){
@@ -89,8 +88,76 @@ void spawnFood(foodHandler* handler){
     }
 }
 
+void freeFoodHandler(foodHandler* foodHandler){
+    for (int i = 0; i < NUMBEROFTREE; ++i) {
+        free(foodHandler->trees[i]);
+    }
+    freeFoodList(foodHandler->foodList);
+};
+
 void drawFruit(food* curr, SDL_Surface* surface){
     int x = curr->Xpos;
     int y = curr->Ypos;
-    put_pixel(x)
+
+    Uint32 Green = SDL_MapRGB(surface->format, 12, 102, 36);
+    Uint32 Red = SDL_MapRGB(surface->format, 196, 4, 36);
+
+    put_pixel(surface, x, y, Green);
+    put_pixel(surface, x+1, y+1, Red);
+    put_pixel(surface, x, y+2, Red);
+    put_pixel(surface, x+1, y+2, Red);
+    put_pixel(surface, x+2, y+2, Red);
+    put_pixel(surface, x+1, y+3, Red);
 };
+
+void drawTree(foodTree* curr, SDL_Surface* surface){
+    int x = curr->Xpos;
+    int y = curr->Ypos;
+
+    Uint32 Green = SDL_MapRGB(surface->format, 51, 152, 75);
+    Uint32 Red = SDL_MapRGB(surface->format, 255, 3, 66);
+    Uint32 Brown = SDL_MapRGB(surface->format, 93, 44, 40);
+
+    put_pixel(surface, x+1, y, Green);
+    put_pixel(surface, x+2, y, Green);
+    put_pixel(surface, x+3, y, Green);
+    put_pixel(surface, x, y+1, Green);
+    put_pixel(surface, x+2, y+1, Green);
+    put_pixel(surface, x+3, y+1, Green);
+    put_pixel(surface, x+4, y+1, Green);
+    put_pixel(surface, x, y+2, Green);
+    put_pixel(surface, x+1, y+2, Green);
+    put_pixel(surface, x+2, y+2, Green);
+    put_pixel(surface, x+4, y+2, Green);
+    put_pixel(surface, x+1, y+3, Green);
+    put_pixel(surface, x+2, y+3, Green);
+    put_pixel(surface, x+3, y+3, Green);
+
+    put_pixel(surface, x+1, y+1, Red);
+    put_pixel(surface, x+3, y+2, Red);
+    put_pixel(surface, x, y+3, Red);
+    put_pixel(surface, x+4, y+3, Red);
+
+    put_pixel(surface, x+1, y+4, Brown);
+    put_pixel(surface, x+2, y+4, Brown);
+    put_pixel(surface, x+3, y+4, Brown);
+    put_pixel(surface, x+1, y+5, Brown);
+    put_pixel(surface, x+2, y+5, Brown);
+    put_pixel(surface, x+3, y+5, Brown);
+    put_pixel(surface, x+1, y+6, Brown);
+    put_pixel(surface, x+2, y+6, Brown);
+    put_pixel(surface, x+3, y+6, Brown);
+    put_pixel(surface, x+1, y+7, Brown);
+    put_pixel(surface, x+2, y+7, Brown);
+    put_pixel(surface, x+3, y+7, Brown);
+};
+
+void drawFood(foodHandler* foodHandler, SDL_Surface* surface){
+    for (int i = 0; i < NUMBEROFTREE; ++i) {
+        drawTree(foodHandler->trees[i], surface);
+    }
+
+    for (struct foodNode* curr = foodHandler->foodList; curr != NULL; curr = curr->next){
+        drawFruit(curr->food, surface);
+    }
+}

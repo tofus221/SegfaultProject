@@ -1,6 +1,8 @@
 #ifndef SEGFAULTPROJECT_FOOD_H
 #define SEGFAULTPROJECT_FOOD_H
 
+#include "pixelOp.h"
+
 #define NUMBEROFTREE 10
 
 
@@ -28,5 +30,10 @@ typedef struct foodHandler{
     foodTree* trees[NUMBEROFTREE];
     struct foodNode* foodList;
 }foodHandler;
+
+foodHandler* initFoodHandler(int simWidth, int simHeight);
+void spawnFood(foodHandler* handler);
+void drawFood(foodHandler* foodHandler, SDL_Surface* surface);
+void freeFoodHandler(foodHandler* foodHandler);
 
 #endif //SEGFAULTPROJECT_FOOD_H
