@@ -49,5 +49,6 @@ int canSeeAgent(agent* mainAgent, agent* targetAgent);
 int tryMate(agent* mainAgent, simulation* sim);
 void freeAgent(agent* agt);
 void doWander(agent* mainAgent, simulation* sim);
+void reproduction(agent* agent1, agent* agent2, simulation* sim);
 
 #endif //SEGFAULTPROJECT_AGENT_H

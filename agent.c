@@ -9,14 +9,11 @@
 #define GENETICDRIFT 0.01
 #define REPRODUCTION_THRESHOLD 200.0f
 
-/*float birthRate;
-float birthCost;
-float individualBirthCost;*/
+
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange, int birthRate, float birthCost, float individualBirthCost){
     agentType* newAgent = malloc(sizeof(agentType));
-    memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
     newAgent->typeId = typeId;
     newAgent->lifeSpan = lifeSpan;
@@ -33,7 +30,6 @@ agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy,
 //create an actual agent in the simulation.
 agent* createAgent(agentType* type, int x, int y){
     agent* newAgent = malloc(sizeof (agent));
-    memset(newAgent, 0, sizeof (agent));
     newAgent->type = type;
     newAgent->Xpos = x;
     newAgent->Ypos = y;
@@ -420,6 +416,7 @@ int agentBehave(agent* mainAgent, simulation* sim)
         return 1;
     }
     doWander(mainAgent,sim);
+
     return 0;
     
 }
