@@ -1,6 +1,7 @@
 #include <SDL/SDL_mouse.h>
 #include <err.h>
 #include "engine.h"
+#include "agent.h"
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -46,6 +47,8 @@ simulation *initEngine(int w, int h)
     
     simulation *sim = malloc(sizeof(simulation));
     sim->screen = screen;
+    sim->agentList = initLinkedList();
+    sim->popCount = 0;
     sim->tickInterval = SLOW;
     sim->isPaused = 0;
 
@@ -60,6 +63,7 @@ simulation *initEngine(int w, int h)
 void free_simulation(simulation *sim)
 {
     SDL_FreeSurface(sim->screen);
+    freeLinkedList(sim->agentList);
     free(sim);
 }
 

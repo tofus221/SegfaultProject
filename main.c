@@ -1,48 +1,81 @@
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include "agent.h"
 #include "engine.h"
 #include "pixelOp.h"
+#include "perlin.h"
+#include <math.h>
 
-int x = 180, y = 328;
-int dx = 1, dy = 2;
+#define W_WIDTH 700
+#define W_HEIGHT 700
 
+SDL_Surface *terrain;
+Uint8 r = 0;
 void update(simulation *sim)
 {
     SDL_Surface *screen = sim->screen;
-    Uint32 color = SDL_MapRGB(screen->format, 255, 255, 255);
-
-    x += dx;
-    y += dy;
-
-    if(x < 0)
+    SDL_BlitSurface(terrain, NULL, screen, NULL);
+    while (sim->popCount < 500)
     {
-        x = 0;
-        dx *= -1;
+        agentType* aType = createAgentType("sheep", 2, 100,100,3,6,100);
+        aType->targetAmount = 0;
+        aType->color = SDL_MapRGB(screen->format, 0, 255, 0);
+        push(sim,createAgent(aType,rand() % (screen->w),rand() % (screen->h)));
     }
-    if(x >= screen->w)
+    
+    for (struct agentLinkedList *al = sim->agentList->next; al != NULL;)
     {
-        x = screen->w - 1;
-        dx *= -1;
+        
+        
+        if (al->agent->type->typeId == 1)
+        {
+            if (al->agent->type->energy <= 0.0f || al->agent->type->lifeSpan < 0.0f)
+            {
+                struct agentLinkedList *temp = al;
+                al = al->next;
+                agent* res;
+                popWithId(sim->agentList,temp->agent->id,&res);
+                freeAgent(res);
+                sim->popCount--;
+                continue;
+            }
+            
+            int res = agentBehave(al->agent,sim);
+            
+            al->agent->type->lifeSpan -= 1;
+        }
+        else
+        {
+            doWander(al->agent,sim);
+        }
+        //printf("pop = %i\n",sim->popCount);
+        al = al->next;
     }
-    if(y < 0)
-    {
-        y = 0;
-        dy *= -1;
-    }
-    if(y >= screen->h)
-    {
-        y = screen->h - 1;
-        dy *= -1;
-    }
-
-    put_pixel(screen, x, y, color);
+    
+    drawAgents(screen,sim->agentList);
 }
 
 int main()
 {
-    simulation *sim = initEngine(500, 500);
-
+    terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
+    srand(time(0));
+    simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
+    for (size_t i = 0; i < 50; i++)
+    {
+        agentType* aType = createAgentType("wolf", 1, 1000,1000,4,6, 100);
+        aType->targetAmount = 1;
+        aType->targetsId = calloc(aType->targetAmount, sizeof(int));
+        aType->targetsId[0] = 2;
+        aType->color = SDL_MapRGB(sim->screen->format, 255, 0, 0);
+        push(sim,createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h)));
+    }
     run(sim, update);
-
+    
     free_simulation(sim);
+    
+    SDL_FreeSurface(terrain);
+    
+    SDL_Quit();
     return 0;
 }
