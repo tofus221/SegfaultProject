@@ -12,7 +12,7 @@ typedef struct foodTree{
     int Xpos, Ypos;
     int currentFood; //le nombre de nourriture par terre
     float radius;
-} foodTree;
+}foodTree;
 
 typedef struct food{
     float energyToGive;
@@ -32,6 +32,7 @@ typedef struct foodHandler{
 }foodHandler;
 
 foodHandler* initFoodHandler(int simWidth, int simHeight);
+int popWithPos(struct foodNode* list, int x, int y);
 void spawnFood(foodHandler* handler);
 void drawFood(foodHandler* foodHandler, SDL_Surface* surface);
 void freeFoodHandler(foodHandler* foodHandler);

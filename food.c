@@ -21,7 +21,7 @@ void pushFood(struct foodNode* foodNode, food* food){
     newBlock->food = food;
 }
 
-int popWithPos(struct foodNode* list, int x, int y, food** res){
+int popWithPos(struct foodNode* list, int x, int y){
     struct foodNode* parent = list;
     for (struct foodNode* curr = list->next; curr != NULL; parent = curr, curr = curr->next)
     {
@@ -29,7 +29,6 @@ int popWithPos(struct foodNode* list, int x, int y, food** res){
         {
             if (curr->food->Ypos == y){
                 parent->next = curr->next;
-                *res = curr->food;
                 free(curr);
                 return 1;
             }
