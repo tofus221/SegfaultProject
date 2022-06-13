@@ -4,10 +4,10 @@
 #include "pixelOp.h"
 
 #define NUMBEROFTREE 10
+#define MAXIMUMFOODPERTREE 25
 
 
-
-//l'idée est que au début de la simulation on fit spawn des arbre qui a leurs tour feront spawn de la nouriture autour d'eux.
+//l'idée est que au début de la simulation on fait spawn des arbre qui a leurs tour feront spawn de la nouriture autour d'eux.
 typedef struct foodTree{
     int Xpos, Ypos;
     int currentFood; //le nombre de nourriture par terre

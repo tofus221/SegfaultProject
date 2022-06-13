@@ -16,9 +16,10 @@ void update(simulation *sim)
 {
     SDL_Surface *screen = sim->screen;
     SDL_BlitSurface(terrain, NULL, screen, NULL);
-
+    spawnFood(sim->foodHandler);
     
     drawAgents(screen,sim->agentList);
+    drawFood(sim->foodHandler, screen);
 }
 
 int main()
@@ -27,19 +28,6 @@ int main()
     srand(time(0));
     simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
 
-    agentType *test = createAgentType("r", 1, 2 ,500,2 ,2,100,5,2,2);
-    agent *agent1 = createAgent(test, 200, 200);
-    agent *agent2 = createAgent(test, 210, 210);
-    push(sim, agent1);
-    push(sim, agent2);
-
-    printf("reprod1\n");
-    reproduction(agent1, agent2, sim);
-    printf("\n");
-
-    printf("reprod2\n");
-
-    reproduction(agent1, agent2, sim);
 
     run(sim, update);
     

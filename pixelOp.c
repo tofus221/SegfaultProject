@@ -7,6 +7,19 @@ Uint8* pixel_ref(SDL_Surface *surf, unsigned x, unsigned y)
     return (Uint8*)surf->pixels + y * surf->pitch + x * bpp;
 }
 
+SDL_Surface* load_image(char *path)
+{
+    SDL_Surface *img;
+
+    // Load an image using SDL_image with format detection.
+    // If it fails, die with an error message.
+    img = IMG_Load(path);
+    if (!img)
+        errx(3, "can't load %s: %s", path, IMG_GetError());
+
+    return img;
+}
+
 void put_pixel(SDL_Surface *surface, unsigned x, unsigned y, Uint32 pixel)
 {
     Uint8 *p = pixel_ref(surface, x, y);
