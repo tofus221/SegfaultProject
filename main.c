@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "agent.h"
+#include "sickness.h"
 #include "engine.h"
 #include "pixelOp.h"
 #include "perlin.h"
@@ -18,7 +19,7 @@ void update(simulation *sim)
     SDL_BlitSurface(terrain, NULL, screen, NULL);
     while (sim->popCount < 500)
     {
-        agentType* aType = createAgentType("sheep", 2, 100,100,3,6,100);
+        agentType* aType = createAgentType("sheep", 2, 100,400,3,6,100);
         aType->targetAmount = 0;
         aType->color = SDL_MapRGB(screen->format, 0, 255, 0);
         push(sim,createAgent(aType,rand() % (screen->w),rand() % (screen->h)));
@@ -30,7 +31,7 @@ void update(simulation *sim)
         
         if (al->agent->type->typeId == 1)
         {
-            if (al->agent->type->energy <= 0.0f || al->agent->type->lifeSpan < 0.0f)
+            if (al->agent->type->energy <= 0.0f || al->agent->type->timeLeft < 0.0f)
             {
                 struct agentLinkedList *temp = al;
                 al = al->next;
@@ -43,7 +44,7 @@ void update(simulation *sim)
             
             int res = agentBehave(al->agent,sim);
             
-            al->agent->type->lifeSpan -= 1;
+            al->agent->type->timeLeft -= 1;
         }
         else
         {
@@ -58,9 +59,13 @@ void update(simulation *sim)
 
 int main()
 {
+    
     terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     srand(time(0));
     simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
+    sim->terrain = terrain;
+    int infect[1] ={1}; 
+    sickness* droopy_nose = createSickness("droop",0.5,1,0.01,infect,1,SDL_MapRGB(sim->screen->format, 0, 0, 0));
     for (size_t i = 0; i < 50; i++)
     {
         agentType* aType = createAgentType("wolf", 1, 1000,1000,4,6, 100);
@@ -68,7 +73,9 @@ int main()
         aType->targetsId = calloc(aType->targetAmount, sizeof(int));
         aType->targetsId[0] = 2;
         aType->color = SDL_MapRGB(sim->screen->format, 255, 0, 0);
-        push(sim,createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h)));
+        agent* wolf = createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h));
+        addSickness(wolf->SLL,droopy_nose);
+        push(sim, wolf);
     }
     run(sim, update);
     
