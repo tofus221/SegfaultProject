@@ -16,44 +16,16 @@ void update(simulation *sim)
 {
     SDL_Surface *screen = sim->screen;
     SDL_BlitSurface(terrain, NULL, screen, NULL);
-    while (sim->popCount < 500)
-    {
-        agentType* aType = createAgentType("sheep", 2, 100,100,3,6,100);
-        aType->targetAmount = 0;
-        aType->color = SDL_MapRGB(screen->format, 0, 255, 0);
-        push(sim,createAgent(aType,rand() % (screen->w),rand() % (screen->h)));
+
+    spawnFood(sim->foodHandler);
+
+    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL ; curr = curr->next) {
+        agentBehave(curr->agent, sim);
     }
-    
-    for (struct agentLinkedList *al = sim->agentList->next; al != NULL;)
-    {
-        
-        
-        if (al->agent->type->typeId == 1)
-        {
-            if (al->agent->type->energy <= 0.0f || al->agent->type->lifeSpan < 0.0f)
-            {
-                struct agentLinkedList *temp = al;
-                al = al->next;
-                agent* res;
-                popWithId(sim->agentList,temp->agent->id,&res);
-                freeAgent(res);
-                sim->popCount--;
-                continue;
-            }
-            
-            int res = agentBehave(al->agent,sim);
-            
-            al->agent->type->lifeSpan -= 1;
-        }
-        else
-        {
-            doWander(al->agent,sim);
-        }
-        //printf("pop = %i\n",sim->popCount);
-        al = al->next;
-    }
-    
+
+
     drawAgents(screen,sim->agentList);
+    drawFood(sim->foodHandler, screen);
 }
 
 int main()
@@ -61,15 +33,15 @@ int main()
     terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     srand(time(0));
     simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
-    for (size_t i = 0; i < 50; i++)
-    {
-        agentType* aType = createAgentType("wolf", 1, 1000,1000,4,6, 100);
-        aType->targetAmount = 1;
-        aType->targetsId = calloc(aType->targetAmount, sizeof(int));
-        aType->targetsId[0] = 2;
-        aType->color = SDL_MapRGB(sim->screen->format, 255, 0, 0);
-        push(sim,createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h)));
-    }
+
+    agentType* test = createAgentType("oui", 0, 15, 150, 2, 2, 10, 1, 10 , 10);
+    agentType* test1 = malloc(sizeof(agentType));
+    memcpy(test1, test, sizeof(agentType));
+    agent* agent1 = createAgent(test, 100 , 100);
+    agent* agent2 = createAgent(test1, 600 , 600);
+    push(sim, agent1);
+    push(sim, agent2);
+
     run(sim, update);
     
     free_simulation(sim);

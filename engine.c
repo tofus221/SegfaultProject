@@ -65,6 +65,7 @@ simulation *initEngine(int w, int h)
     sim->renderer = renderer;
     sim->screen = screen;
     sim->agentList = initLinkedList();
+    sim->foodHandler = initFoodHandler(screen->w, screen->h);
     sim->popCount = 0;
     sim->tickInterval = SLOW;
     sim->isPaused = 0;
@@ -84,6 +85,7 @@ void free_simulation(simulation *sim)
     SDL_FreeSurface(sim->renderer);
     SDL_FreeSurface(sim->screen);
     freeLinkedList(sim->agentList);
+    freeFoodHandler(sim->foodHandler);
     free(sim);
 }
 

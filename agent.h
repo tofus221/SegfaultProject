@@ -8,10 +8,11 @@ typedef struct agentType{
     int typeId;
     float lifeSpan;
     float energy;
-    //float foodDetectionRadius;
-    //food to add when i'll know how to implement, might do a file just for the food search
     float speed;
-    char* reproductionType;
+    //char* reproductionType;
+    int birthRate;
+    float birthCost;
+    float individualBirthCost;
     float resistance;
     float hearingRange;
     int* targetsId;
@@ -33,7 +34,7 @@ struct agentLinkedList{
     struct agentLinkedList* next;
 };
 
-agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange);
+agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange, int birthRate, float birthCost, float individualBirthCost);
 agent* createAgent(agentType* type, int x, int y);
 void moveAgent(agent* agent, int addX, int addY);
 struct agentLinkedList* initLinkedList();
@@ -48,5 +49,6 @@ int canSeeAgent(agent* mainAgent, agent* targetAgent);
 int tryMate(agent* mainAgent, simulation* sim);
 void freeAgent(agent* agt);
 void doWander(agent* mainAgent, simulation* sim);
+void reproduction(agent* agent1, agent* agent2, simulation* sim);
 
 #endif //SEGFAULTPROJECT_AGENT_H
