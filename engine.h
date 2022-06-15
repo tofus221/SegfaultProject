@@ -11,18 +11,20 @@ typedef struct button
     int y;
     int w;
     int h;
-    Uint32 color;
+    SDL_Surface *image;
 } button;
 
 typedef struct simulation
 {
     SDL_Surface *screen;
+    SDL_Surface *renderer;
     struct agentLinkedList* agentList;
 
     int popCount; //this isn't the current population, it is used to determine the id of every agent. It will only increase.
     foodHandler* foodHandler;
     button play;
     button speed;
+    button stop;
     int tickInterval;
     int isPaused;
 } simulation;
