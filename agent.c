@@ -3,6 +3,8 @@
 #include <memory.h>
 #include <math.h>
 #include "agent.h"
+#include "sickness.h"
+#include "pixelOp.h"
 #include <SDL/SDL.h>
 #include "engine.h"
 #include "food.h"
@@ -19,6 +21,7 @@ agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy,
     newAgent->name = name;
     newAgent->typeId = typeId;
     newAgent->lifeSpan = lifeSpan;
+    newAgent->timeLeft = lifeSpan;
     newAgent->energy = energy;
     newAgent->speed = speed;
     newAgent->resistance = resistance;
@@ -38,6 +41,7 @@ agent* createAgent(agentType* type, int x, int y){
     newAgent->Ypos = y;
     newAgent->wanderX = -1;
     newAgent->wanderY = -1;
+    newAgent->SLL = initSLL();
     return newAgent;
 }
 
@@ -292,7 +296,25 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
 };
 
 
-int moveTowards(agent* agent, int x, int y)
+
+float energyCost(float actionCost, agent* mainAgent, simulation* sim)
+{
+    float cost = actionCost;
+    for (sicknessLinkedList* curr = mainAgent->SLL->next; curr != NULL; curr = curr->next )
+    {
+        cost += actionCost * curr->data->severity;
+    }
+    Uint8 r = 0;
+    Uint8 g = 0;
+    Uint8 b = 0;
+    SDL_GetRGB(get_pixel(sim->terrain, mainAgent->Xpos,mainAgent->Ypos),sim->terrain->format,&r, &g, &b);
+    float res = (float)(r + g + b) / (3 * 256);
+    cost += (mainAgent->type->resistance - res) * (mainAgent->type->resistance - res) * actionCost;
+    return cost;
+}
+
+
+int moveTowards(agent* agent, simulation* sim, int x, int y)
 {
     if (agent->type->speed <= 0)
     {
@@ -306,12 +328,12 @@ int moveTowards(agent* agent, int x, int y)
     {
         double ratio = (double)agent->type->speed / distance;
         moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio));
-        agent->type->energy -= 1; //agent->type->speed * agent->type->speed;
+        agent->type->energy -= energyCost(0.1,agent,sim); //agent->type->speed * agent->type->speed;
         return 0;
     }
     agent->Xpos = x;
     agent->Ypos = y;
-    agent->type->energy -= 1;  //(float) distance * distance;
+    agent->type->energy -= energyCost(0.1,agent,sim);  //(float) distance * distance;
     return 1;
 }
 
@@ -332,7 +354,7 @@ int tryFeedAgent(agent* mainAgent, simulation* sim)
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
-        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)) || currAgent->type->lifeSpan == 0)
+        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)) || currAgent->type->timeLeft <= 0)
         {
             continue;
         }
@@ -354,7 +376,7 @@ int tryFeedAgent(agent* mainAgent, simulation* sim)
     }
     if (target != NULL)
     {
-        if(moveTowards(mainAgent,target->Xpos,target->Ypos))
+        if(moveTowards(mainAgent,sim,target->Xpos,target->Ypos))
         {
             mainAgent->type->energy += target->type->energy;
             popWithId(sim->agentList,target->id,&target);
@@ -417,7 +439,7 @@ int tryMate(agent* mainAgent, simulation* sim)
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
-        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent) || currAgent->type->lifeSpan == 0))
+        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent) || currAgent->type->timeLeft <= 0))
         {
             continue;
         }
@@ -435,7 +457,7 @@ int tryMate(agent* mainAgent, simulation* sim)
     }
     if (target != NULL)
     {
-        if (moveTowards(mainAgent, target->Xpos, target->Ypos))
+        if (moveTowards(mainAgent, sim, target->Xpos, target->Ypos))
         {
             reproduction(mainAgent,target,sim);
             mainAgent->type->energy -= REPRODUCTION_THRESHOLD / 2;
@@ -447,10 +469,57 @@ int tryMate(agent* mainAgent, simulation* sim)
     return 0;
 }
 
+int canInfectAgent(agent* mainAgent, agent* targetAgent)
+{
+    double xOffset = (double)targetAgent->Xpos - (double)mainAgent->Xpos;
+    double yOffset = (double)targetAgent->Ypos - (double)mainAgent->Ypos;
+    double distance = sqrt(xOffset*xOffset + yOffset*yOffset);
+    return distance <= (double)3;
+}
+
+
+void doInfect(agent* mainAgent, simulation* sim)
+{
+    
+    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
+    {
+        agent* currAgent = curr->agent;
+        if (mainAgent == currAgent || (!canInfectAgent(mainAgent,currAgent) || currAgent->type->timeLeft <= 0))
+        {
+            continue;
+        }
+        for (struct sicknessLinkedList* sickList = mainAgent->SLL->next; sickList != NULL; sickList = sickList->next)
+        {
+        
+            sickness* sick = sickList->data;
+            for (size_t i = 0; i < sick->canInfectAmount; i++)
+            {
+                if (sick->mortality > (float)rand() / (float)(RAND_MAX))
+                {
+                    mainAgent->type->timeLeft = 0;
+                }
+                
+                if ((currAgent->type->typeId == sick->canInfectID[i]))
+                {
+                    if((float)rand() / (float)(RAND_MAX) < (double)(sick->infectiousness))
+                    {
+                        addSickness(currAgent->SLL,sick);
+                    }
+                }
+            }
+            
+        
+        }
+    }
+}
+
+
+
 // makes an agent behave; returns 2 when trying to mate, 1 when trying to feed, and 0 when wandering.
 int agentBehave(agent* mainAgent, simulation* sim)
 {  
     //printf("behave\n");
+    doInfect(mainAgent,sim);
     if (mainAgent->type->energy > REPRODUCTION_THRESHOLD)
     {
         if (tryMate(mainAgent, sim))
@@ -479,5 +548,5 @@ void doWander(agent* mainAgent, simulation* sim)
         mainAgent->wanderX = rand() % (sim->screen->w);
         mainAgent->wanderY = rand() % (sim->screen->h);
     }
-    moveTowards(mainAgent,mainAgent->wanderX,mainAgent->wanderY);
+    moveTowards(mainAgent, sim, mainAgent->wanderX,mainAgent->wanderY);
 }
