@@ -53,8 +53,10 @@ void update(simulation *sim)
         //printf("pop = %i\n",sim->popCount);
         al = al->next;
     }
-    
+
+
     drawAgents(screen,sim->agentList);
+    drawFood(sim->foodHandler, screen);
 }
 
 int main()
@@ -63,6 +65,7 @@ int main()
     terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     srand(time(0));
     simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
+
     sim->terrain = terrain;
     int infect[1] ={1}; 
     sickness* droopy_nose = createSickness("droop",0.5,1,0.01,infect,1,SDL_MapRGB(sim->screen->format, 0, 0, 0));

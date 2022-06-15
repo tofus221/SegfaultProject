@@ -2,19 +2,20 @@
 #include <stdio.h>
 #include <memory.h>
 #include <math.h>
-#include <time.h>
 #include "agent.h"
 #include "sickness.h"
 #include "pixelOp.h"
 #include <SDL/SDL.h>
 #include "engine.h"
-#include <time.h>
+#include "food.h"
 
 #define GENETICDRIFT 0.01
 #define REPRODUCTION_THRESHOLD 200.0f
 
+
+
 //create an Agent Type, meant to be used with the interface.
-agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange){
+agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange, int birthRate, float birthCost, float individualBirthCost){
     agentType* newAgent = malloc(sizeof(agentType));
     memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
@@ -25,13 +26,16 @@ agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy,
     newAgent->speed = speed;
     newAgent->resistance = resistance;
     newAgent->hearingRange = hRange;
+    newAgent->birthRate = birthRate;
+    newAgent->birthCost = birthCost;
+    newAgent->individualBirthCost = individualBirthCost;
     return newAgent;
 }
 
 //create an actual agent in the simulation.
 agent* createAgent(agentType* type, int x, int y){
     agent* newAgent = malloc(sizeof (agent));
-    memset(newAgent, 0, sizeof (agent));
+    memset(newAgent, 0, sizeof(agent));
     newAgent->type = type;
     newAgent->Xpos = x;
     newAgent->Ypos = y;
@@ -43,6 +47,7 @@ agent* createAgent(agentType* type, int x, int y){
 
 void freeAgentType(agentType* agentT)
 {
+
     free(agentT->targetsId);
     free(agentT);
 }
@@ -179,8 +184,8 @@ void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
         return;
     //Uint32 color = SDL_MapRGB(screen->format, 255, 0, 0); temporary, should be really cool to be able to put an image instead
     SDL_Rect rect;
-    rect.w = 2;
-    rect.h = 2;
+    rect.w = 4;
+    rect.h = 4;
 
     list = list->next; // skip the sentinel
     while (list != NULL){
@@ -221,7 +226,9 @@ agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
         newHrange = geneticDrift(agentType2->hearingRange);
         
     }
-    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
+    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
+                           newSpeed, newResistance, newHrange, agent1->type->birthRate,
+                           agent1->type->birthCost, agent1->type->individualBirthCost);
 }
 
 agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
@@ -253,31 +260,39 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
     else
         newHrange = agentType2->hearingRange;
 
-    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy, newSpeed, newResistance, newHrange);
+    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
+                           newSpeed, newResistance, newHrange, agent1->type->birthRate,
+                           agent1->type->birthCost, agent1->type->individualBirthCost);
 }
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
-    //srand(time(0)); //initialize the random generator
-    agentType* newType;
-    if (rand()%2){ //pick if there will be drift or not
-        printf("geneticDrift\n");
-        newType = reproductionWithGeneticDrift(agent1, agent2);
+    agent1->type->energy -= agent1->type->birthCost;
+    for (int i = 0; i < agent1->type->birthRate; ++i) {
+        if (rand() % 2){
+            agentType* newType;
+            if (rand()%2){ //pick if there will be drift or not
+                printf("geneticDrift\n");
+                newType = reproductionWithGeneticDrift(agent1, agent2);
+            }
+            else {
+                printf("normal\n");
+                newType = normalReproduction(agent1, agent2);
+            }
+            agent* newAgent = createAgent(newType, agent1->Xpos, agent1->Ypos);
+            //newAgent->type->energy = REPRODUCTION_THRESHOLD; //TEMPORARY, idk why this is here lol
+            newAgent->type->targetAmount = agent1->type->targetAmount;
+            newAgent->type->targetsId = calloc(agent1->type->targetAmount, sizeof(int));
+            for (int i = 0; i < agent1->type->targetAmount; i++)
+            {
+                newAgent->type->targetsId[i] = agent1->type->targetsId[i];
+            }
+
+            newAgent->type->color = agent1->type->color;
+            push(sim, newAgent);
+
+            agent1->type->energy -= agent1->type->individualBirthCost;
+        }
     }
-    else {
-        printf("normal\n");
-        newType = normalReproduction(agent1, agent2);
-    }
-    agent* newAgent = createAgent(newType, agent1->Xpos, agent2->Ypos);
-    newAgent->type->energy = REPRODUCTION_THRESHOLD; //TEMPORARY
-    newAgent->type->targetAmount = agent1->type->targetAmount;
-    newAgent->type->targetsId = calloc(agent1->type->targetAmount, sizeof(int));
-    for (int i = 0; i < agent1->type->targetAmount; i++)
-    {
-        newAgent->type->targetsId[i] = agent1->type->targetsId[i];
-    }
-    
-    newAgent->type->color = agent1->type->color;
-    push(sim, newAgent);
 };
 
 
@@ -331,7 +346,8 @@ int canSeeAgent(agent* mainAgent, agent* targetAgent)
     return distance <= (double)mainAgent->type->hearingRange;
 }
 
-int tryFeed(agent* mainAgent, simulation* sim)
+
+int tryFeedAgent(agent* mainAgent, simulation* sim)
 {
     agent* target = NULL;
     double minDist = 0;
@@ -370,6 +386,49 @@ int tryFeed(agent* mainAgent, simulation* sim)
         return 1;
     }
     
+    return 0;
+}
+
+int canSeeFruit(agent* mainAgent, food* fruit){
+    int xOffset = fruit->Xpos - mainAgent->Xpos;
+    int yOffset = fruit->Ypos - mainAgent->Ypos;
+    double distance = sqrt((double)xOffset*xOffset + yOffset*yOffset);
+    return distance <= (double)mainAgent->type->hearingRange;
+}
+
+int tryFeedFruit(agent* mainAgent, simulation* sim){
+    food* target = NULL;
+    double minDist = 0;
+    for (struct foodNode* curr = sim->foodHandler->foodList->next; curr != NULL; curr = curr->next)
+    {
+        food* currFruit = curr->food;
+        if (!canSeeFruit(mainAgent, currFruit) || currFruit->lifeSpan == 0)
+        {
+            continue;
+        }
+
+        int xOffset = currFruit->Xpos - mainAgent->Xpos;
+        int yOffset = currFruit->Ypos - mainAgent->Ypos;
+        double distance = sqrt((double)xOffset*xOffset + yOffset*yOffset);
+        if (target == NULL || minDist > distance)
+        {
+            minDist = distance;
+            target = currFruit;
+        }
+
+    }
+    if (target != NULL)
+    {
+        if(moveTowards(mainAgent,target->Xpos,target->Ypos))
+        {
+            mainAgent->type->energy += target->energyToGive;
+            popWithPos(sim->foodHandler->foodList, target->Xpos, target->Ypos);
+            target->father->currentFood--;
+            free(target);
+        }
+        return 1;
+    }
+
     return 0;
 }
 
@@ -469,11 +528,14 @@ int agentBehave(agent* mainAgent, simulation* sim)
             return 2;
         }
     }
-    if (tryFeed(mainAgent, sim))
+    if ((mainAgent->type->targetAmount == 0 && tryFeedFruit(mainAgent, sim)) || tryFeedAgent(mainAgent, sim))
     {
         return 1;
     }
+
+
     doWander(mainAgent,sim);
+
     return 0;
     
 }
