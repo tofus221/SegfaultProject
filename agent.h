@@ -11,7 +11,7 @@ typedef struct agentType{
     float timeLeft;
     float energy;
     float speed;
-    //char* reproductionType;
+    int asexualReproduction;
     int birthRate;
     float birthCost;
     float individualBirthCost;

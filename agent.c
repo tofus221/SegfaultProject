@@ -271,7 +271,7 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
     for (int i = 0; i < agent1->type->birthRate; ++i) {
         if (rand() % 2){
             agentType* newType;
-            if (rand()%2){ //pick if there will be drift or not
+            if (agent1->type->asexualReproduction || rand()%2){ //pick if there will be drift or not
                 newType = reproductionWithGeneticDrift(agent1, agent2);
             }
             else {
@@ -435,6 +435,10 @@ int tryMate(agent* mainAgent, simulation* sim)
 {
     agent* target = NULL;
     double minDist = 0;
+    if (mainAgent->type->asexualReproduction && mainAgent->type->energy >= REPRODUCTION_THRESHOLD){
+        reproduction(mainAgent, mainAgent, sim);
+        return 1;
+    }
     for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
@@ -459,8 +463,6 @@ int tryMate(agent* mainAgent, simulation* sim)
         if (moveTowards(mainAgent, sim, target->Xpos, target->Ypos))
         {
             reproduction(mainAgent,target,sim);
-            mainAgent->type->energy -= REPRODUCTION_THRESHOLD / 2;
-            target->type->energy -= REPRODUCTION_THRESHOLD / 2;
         }
         return 1;
     }
@@ -498,7 +500,7 @@ void doInfect(agent* mainAgent, simulation* sim)
                     mainAgent->type->timeLeft = 0;
                 }
                 
-                if ((currAgent->type->typeId == sick->canInfectID[i]))
+                if (currAgent->type->typeId == sick->canInfectID[i])
                 {
                     if((float)rand() / (float)(RAND_MAX) < (double)(sick->infectiousness))
                     {
@@ -544,7 +546,7 @@ void doWander(agent* mainAgent, simulation* sim)
 {
     if (mainAgent->wanderX == mainAgent->Xpos || mainAgent->wanderX == -1 || mainAgent->wanderY == mainAgent->Ypos)
     {
-        mainAgent->wanderX = rand() % (sim->screen->w);
+        mainAgent->wanderX = rand() % (sim->screen->w); //MIN((mainAgent.Xpos - 100) + (rand() % 200))
         mainAgent->wanderY = rand() % (sim->screen->h);
     }
     moveTowards(mainAgent, sim, mainAgent->wanderX,mainAgent->wanderY);
