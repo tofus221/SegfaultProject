@@ -131,7 +131,7 @@
                     <property name="has-entry">True</property>
                     <property name="entry-text-column">0</property>
                     <child internal-child="entry">
-                      <object class="GtkEntry">
+                      <object class="GtkEntry" id="AgentListEntry">
                         <property name="can-focus">False</property>
                         <property name="text" translatable="yes">Agent 1</property>
                       </object>

@@ -15,6 +15,65 @@ Uint8 r = 0;
 agentType **agents;
 agentType *activeAgent;
 int nbAgents = 1;
+// Function to swap two numbers
+void swap(char *x, char *y) {
+    char t = *x; *x = *y; *y = t;
+}
+ 
+// Function to reverse `buffer[i…j]`
+char* reverse(char *buffer, int i, int j)
+{
+    while (i < j) {
+        swap(&buffer[i++], &buffer[j--]);
+    }
+ 
+    return buffer;
+}
+ 
+// Iterative function to implement `itoa()` function in C
+char* itoa(int value, char* buffer, int base)
+{
+    // invalid input
+    if (base < 2 || base > 32) {
+        return buffer;
+    }
+ 
+    // consider the absolute value of the number
+    int n = abs(value);
+ 
+    int i = 0;
+    while (n)
+    {
+        int r = n % base;
+ 
+        if (r >= 10) {
+            buffer[i++] = 65 + (r - 10);
+        }
+        else {
+            buffer[i++] = 48 + r;
+        }
+ 
+        n = n / base;
+    }
+ 
+    // if the number is 0
+    if (i == 0) {
+        buffer[i++] = '0';
+    }
+ 
+    // If the base is 10 and the value is negative, the resulting string
+    // is preceded with a minus sign (-)
+    // With any other base, value is always considered unsigned
+    if (value < 0 && base == 10) {
+        buffer[i++] = '-';
+    }
+ 
+    buffer[i] = '\0'; // null terminate string
+ 
+    // reverse the string and return it
+    return reverse(buffer, 0, i - 1);
+}
+
 void update(simulation *sim)
 {
     spawnFood(sim->foodHandler);
@@ -44,7 +103,7 @@ void update(simulation *sim)
     drawFood(sim->foodHandler, screen);
 }
 
-void call_perlin_noise(GtkButton *button, gpointer user_data)
+void call_perlin_noise(GtkButton *button __attribute__((unused)), gpointer user_data __attribute__((unused)))
 {
     terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     srand(time(0));
@@ -54,7 +113,7 @@ void call_perlin_noise(GtkButton *button, gpointer user_data)
     sickness* droopy_nose = createSickness("droop",0.5,1,0.01,infect,1,SDL_MapRGB(sim->screen->format, 0, 0, 0));
     for (size_t i = 0; i < 10; i++)
     {
-        agentType* aType = createAgentType("wolf", 1, 200, 150, 4, 0.5, 40, 2, 300, 50);
+        agentType* aType = createAgentType("wolf", 1, 200, 150, 4, 0.5, 40, 2, 50, 300, 50, 1);
         aType->targetAmount = 1;
         aType->targetsId = calloc(aType->targetAmount, sizeof(int));
         aType->targetsId[0] = 2;
@@ -66,7 +125,7 @@ void call_perlin_noise(GtkButton *button, gpointer user_data)
 
     for (size_t i = 0; i < 600; i++)
     {
-        agentType* aType = createAgentType("sheep", 2, 200, 150, 3, 0.5, 100, 2, 300, 50);
+        agentType* aType = createAgentType("sheep", 2, 200, 150, 3, 0.5, 100, 2, 50, 300, 50, 1);
         aType->targetAmount = 0;
         aType->color = SDL_MapRGB(sim->screen->format, 0, 255, 0);
         agent* sheep = createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h));
@@ -83,43 +142,169 @@ void call_perlin_noise(GtkButton *button, gpointer user_data)
     SDL_Quit();
 }
 
-void Save_Settings(GtkButton *button, gpointer builder)
+void Save_Settings(GtkButton *button __attribute__((unused)), gpointer builder)
 {
+    GtkTreeIter iter;
+    GtkComboBox* agentCombo = GTK_COMBO_BOX(gtk_builder_get_object(builder, "Agent"));
+    GtkEntry* agentEntry = GTK_ENTRY(gtk_builder_get_object(builder, "AgentListEntry"));
+    GtkListStore* agent = GTK_LIST_STORE(gtk_builder_get_object(builder, "AgentList"));
     GtkEntry* name = GTK_ENTRY(gtk_builder_get_object(builder, "NameEntry"));
-    GtkComboBox* foodTarget = GTK_ENTRY(gtk_builder_get_object(builder, "FTCombo"));
-    GtkScale* FoodRange = GTK_SCALE(gtk_builder_get_object(builder, "FRangScale"));
-    GtkScale* speed = GTK_SCALE(gtk_builder_get_object(builder, "SupidoScale"));
+    GtkComboBox* foodTarget = GTK_COMBO_BOX(gtk_builder_get_object(builder, "FTCombo"));
+    GtkListStore* foodTargetList = GTK_LIST_STORE(gtk_builder_get_object(builder, "FoodList"));
+    GtkAdjustment* FoodRange = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "RangeData"));
+    GtkAdjustment* speed = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "SpeedData"));
     GtkEntry* lifeTime = GTK_ENTRY(gtk_builder_get_object(builder, "LTimeEntry"));
     GtkRadioButton* hot = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Hot"));
     GtkRadioButton* cold = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Cold"));
-    GtkScale* maxChildren = GTK_SCALE(gtk_builder_get_object(builder, "ChildrenScale"));
-    GtkScale* fertilityRate = GTK_SCALE(gtk_builder_get_object(builder, "FertilityScale"));
-    GtkScale* MovingEnergy = GTK_SCALE(gtk_builder_get_object(builder, "MoveCostScale"));
-    GtkScale* birthCost = GTK_SCALE(gtk_builder_get_object(builder, "BirthCostScale"));
-    GtkScale* IndividualBirthCost = GTK_SCALE(gtk_builder_get_object(builder, "ChildCostScale"));
-    GtkButton* save = GTK_BUTTON(gtk_builder_get_object(builder, "Save"));
+    GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
+    GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
+    GtkAdjustment* MovingEnergy = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "MoveCostData"));
+    GtkAdjustment* birthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "BirthCostData"));
+    GtkAdjustment* IndividualBirthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildCostData"));
 
-    activeAgent->name = gtk_entry_get_text(name);
+    strcpy(activeAgent->name, gtk_entry_get_text(name));
+    int id = gtk_combo_box_get_active(agentCombo);
+    
+
     activeAgent->lifeSpan = atoi(gtk_entry_get_text(lifeTime));
     activeAgent->timeLeft = atoi(gtk_entry_get_text(lifeTime));
-    activeAgent->speed = gtk_scale_button_get_value(speed);
-    activeAgent->resistance = gtk_toggle_button_get_active(hot) ? 0 : (gtk_toggle_button_get_active(cold) ? 1 : 0.5);
-    activeAgent->hearingRange = gtk_scale_button_get_value(FoodRange);;
-    activeAgent->birthRate =  gtk_scale_button_get_value(maxChildren);
-    activeAgent->birthCost = gtk_scale_button_get_value(birthCost);
-    activeAgent->individualBirthCost = gtk_scale_button_get_value(IndividualBirthCost);
-    activeAgent->moveCost = gtk_scale_button_get_value(MovingEnergy);
-    activeAgent->fertilityRate = gtk_scale_button_get_value(fertilityRate);
+    activeAgent->speed = gtk_adjustment_get_value(speed);
+    activeAgent->resistance = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(hot)) ? 0 : (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cold)) ? 1 : 0.5);
+    activeAgent->hearingRange = gtk_adjustment_get_value(FoodRange);;
+    activeAgent->birthRate =  gtk_adjustment_get_value(maxChildren);
+    activeAgent->birthCost = gtk_adjustment_get_value(birthCost);
+    activeAgent->individualBirthCost = gtk_adjustment_get_value(IndividualBirthCost);
+    activeAgent->moveCost = gtk_adjustment_get_value(MovingEnergy);
+    activeAgent->fertilityRate = gtk_adjustment_get_value(fertilityRate);
+
+    int target = gtk_combo_box_get_active(foodTarget);
+    
+    if(target == 0)
+    {
+        activeAgent->targetAmount = 0;
+        activeAgent->targetsId[0] = target;
+    }
+    else
+    {
+        activeAgent->targetAmount = 1;
+        activeAgent->targetsId[0] = target;
+    }
+
+    char buffer[5];
+    GtkTreePath *path1 = gtk_tree_path_new_from_string(itoa(id, buffer, 10));
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(agent), &iter, path1);
+    gtk_tree_path_free(path1);
+    gtk_list_store_set(agent, &iter, 0, activeAgent->name, -1);
+
+    GtkTreePath *path2 = gtk_tree_path_new_from_string(itoa(id + 1, buffer, 10));
+    gtk_tree_model_get_iter(GTK_TREE_MODEL(foodTargetList), &iter, path2);
+    gtk_tree_path_free(path2);
+    gtk_list_store_set(foodTargetList, &iter, 0, activeAgent->name, -1);
 }
 
-void Add_agents(GtkButton *button, gpointer user_data)
+void Add_agents(GtkButton *button __attribute__((unused)), gpointer builder)
 {
+    GtkComboBox* ComboAgent = GTK_COMBO_BOX(gtk_builder_get_object(builder, "Agent"));
+    GtkListStore* agent = GTK_LIST_STORE(gtk_builder_get_object(builder, "AgentList"));
+    GtkEntry* name = GTK_ENTRY(gtk_builder_get_object(builder, "NameEntry"));
+    GtkListStore* foodTarget = GTK_LIST_STORE(gtk_builder_get_object(builder, "FoodList"));
+    GtkAdjustment* FoodRange = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "RangeData"));
+    GtkAdjustment* speed = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "SpeedData"));
+    GtkEntry* lifeTime = GTK_ENTRY(gtk_builder_get_object(builder, "LTimeEntry"));
+    GtkRadioButton* hot = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Hot"));
+    GtkRadioButton* medium = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Tempered"));
+    GtkRadioButton* cold = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Cold"));
+    GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
+    GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
+    GtkAdjustment* MovingEnergy = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "MoveCostData"));
+    GtkAdjustment* birthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "BirthCostData"));
+    GtkAdjustment* IndividualBirthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildCostData"));
+    
     nbAgents++;
     agents = realloc(agents, nbAgents * sizeof(agentType *));
+    char *s = malloc(30);
+    sprintf(s, "Agent %i", nbAgents);
+    gtk_entry_set_text(name, s);
+    
+    GtkTreeIter tmp;
+    gtk_list_store_append(foodTarget, &tmp);
+    gtk_list_store_set(foodTarget, &tmp, 0, s, -1);
+
+    gtk_list_store_append(agent, &tmp);
+    gtk_list_store_set(agent, &tmp, 0, s, -1);
+
+    gtk_adjustment_set_value(FoodRange, 1);
+    gtk_adjustment_set_value(speed, 1);
+    gtk_entry_set_text(lifeTime, "200");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(hot), TRUE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(medium), FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cold), FALSE);
+    gtk_adjustment_set_value(maxChildren, 1);
+    gtk_adjustment_set_value(fertilityRate, 50);
+    gtk_adjustment_set_value(MovingEnergy, 1);
+    gtk_adjustment_set_value(birthCost, 5);
+    gtk_adjustment_set_value(IndividualBirthCost, 1);
+
+    agents[nbAgents - 1] = createAgentType(s, nbAgents - 1, atoi(gtk_entry_get_text(lifeTime)), 100, gtk_adjustment_get_value(speed), 0, gtk_adjustment_get_value(FoodRange),
+    gtk_adjustment_get_value(maxChildren), gtk_adjustment_get_value(fertilityRate), gtk_adjustment_get_value(birthCost), gtk_adjustment_get_value(IndividualBirthCost),
+    gtk_adjustment_get_value(MovingEnergy));
+    agents[nbAgents - 1]->targetAmount = 0;
+    agents[nbAgents - 1]->targetsId = calloc(1, sizeof(int));
+    
     activeAgent = agents[nbAgents - 1];
 
+    gtk_combo_box_set_active_iter(ComboAgent, &tmp);
+}
 
+void change_settings(GtkComboBox *agent, gpointer builder)
+{
+    GtkEntry* name = GTK_ENTRY(gtk_builder_get_object(builder, "NameEntry"));
+    GtkComboBox* foodTarget = GTK_COMBO_BOX(gtk_builder_get_object(builder, "FTCombo"));
+    GtkAdjustment* FoodRange = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "RangeData"));
+    GtkAdjustment* speed = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "SpeedData"));
+    GtkEntry* lifeTime = GTK_ENTRY(gtk_builder_get_object(builder, "LTimeEntry"));
+    GtkRadioButton* hot = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Hot"));
+    GtkRadioButton* medium = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Tempered"));
+    GtkRadioButton* cold = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Cold"));
+    GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
+    GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
+    GtkAdjustment* MovingEnergy = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "MoveCostData"));
+    GtkAdjustment* birthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "BirthCostData"));
+    GtkAdjustment* IndividualBirthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildCostData"));
     
+    char buffer[10];
+    int id = gtk_combo_box_get_active(agent);
+    activeAgent = agents[id];
+    gtk_entry_set_text(name, activeAgent->name);
+    gtk_combo_box_set_active(foodTarget, activeAgent->targetsId[0]);
+    gtk_adjustment_set_value(FoodRange, activeAgent->hearingRange);
+    gtk_adjustment_set_value(speed, activeAgent->speed);
+    gtk_entry_set_text(lifeTime, itoa(activeAgent->lifeSpan, buffer, 10));
+
+    if(activeAgent->resistance == 0)
+    {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(hot), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(medium), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cold), FALSE);
+    }
+    else if(activeAgent->resistance == 1)
+    {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(hot), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(medium), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cold), TRUE);
+    }
+    else
+    {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(hot), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(medium), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cold), FALSE);
+    }
+
+    gtk_adjustment_set_value(maxChildren, activeAgent->birthRate);
+    gtk_adjustment_set_value(fertilityRate, activeAgent->fertilityRate);
+    gtk_adjustment_set_value(MovingEnergy, activeAgent->moveCost);
+    gtk_adjustment_set_value(birthCost, activeAgent->birthCost);
+    gtk_adjustment_set_value(IndividualBirthCost, activeAgent->individualBirthCost);
 }
 
 void setupGtk()
@@ -140,24 +325,27 @@ void setupGtk()
 
 	GtkWidget* window = GTK_WIDGET(gtk_builder_get_object(builder,"window"));
 	GtkButton* run = GTK_BUTTON(gtk_builder_get_object(builder, "Run"));
-    GtkComboBox* agent = GTK_ENTRY(gtk_builder_get_object(builder, "Agent"));
+    GtkComboBox* agent = GTK_COMBO_BOX(gtk_builder_get_object(builder, "Agent"));
     GtkButton* AddAgent = GTK_BUTTON(gtk_builder_get_object(builder, "AddAgent"));
     GtkEntry* name = GTK_ENTRY(gtk_builder_get_object(builder, "NameEntry"));
-    GtkComboBox* foodTarget = GTK_ENTRY(gtk_builder_get_object(builder, "FTCombo"));
-    GtkScale* FoodRange = GTK_SCALE(gtk_builder_get_object(builder, "FRangScale"));
-    GtkScale* speed = GTK_SCALE(gtk_builder_get_object(builder, "SupidoScale"));
+    GtkComboBox* foodTarget = GTK_COMBO_BOX(gtk_builder_get_object(builder, "FTCombo"));
+    GtkAdjustment* FoodRange = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "RangeData"));
+    GtkAdjustment* speed = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "SpeedData"));
     GtkEntry* lifeTime = GTK_ENTRY(gtk_builder_get_object(builder, "LTimeEntry"));
-    GtkScale* maxChildren = GTK_SCALE(gtk_builder_get_object(builder, "ChildrenScale"));
-    GtkScale* fertilityRate = GTK_SCALE(gtk_builder_get_object(builder, "FertilityScale"));
-    GtkScale* MovingEnergy = GTK_SCALE(gtk_builder_get_object(builder, "MoveCostScale"));
-    GtkScale* birthCost = GTK_SCALE(gtk_builder_get_object(builder, "BirthCostScale"));
-    GtkScale* IndividualBirthCost = GTK_SCALE(gtk_builder_get_object(builder, "ChildCostScale"));
-    GtkButton* save = GTK_BUTTON(gtk_builder_get_object(builder, "Save"));
+    GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
+    GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
+    GtkAdjustment* MovingEnergy = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "MoveCostData"));
+    GtkAdjustment* birthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "BirthCostData"));
+    GtkAdjustment* IndividualBirthCost = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildCostData"));
+    GtkButton* save = GTK_BUTTON(gtk_builder_get_object(builder, "SaveSettings"));
     
-    agents[0] = createAgentType(gtk_entry_get_text(name), 0, atoi(gtk_entry_get_text(lifeTime)), 100, gtk_scale_button_get_value(speed), 0, gtk_scale_button_get_value(FoodRange),
-    gtk_scale_button_get_value(maxChildren), gtk_scale_button_get_value(fertilityRate), gtk_scale_button_get_value(birthCost), gtk_scale_button_get_value(IndividualBirthCost),
-    gtk_scale_button_get_value(MovingEnergy));
-    
+    char s[30];
+    strcpy(s, gtk_entry_get_text(name));
+    agents[0] = createAgentType(s, 0, atoi(gtk_entry_get_text(lifeTime)), 100, gtk_adjustment_get_value(speed), 0, gtk_adjustment_get_value(FoodRange),
+    gtk_adjustment_get_value(maxChildren), gtk_adjustment_get_value(fertilityRate), gtk_adjustment_get_value(birthCost), gtk_adjustment_get_value(IndividualBirthCost),
+    gtk_adjustment_get_value(MovingEnergy));
+    agents[0]->targetAmount = 0;
+    agents[0]->targetsId = calloc(1, sizeof(int));
     activeAgent = agents[0];
 
 	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -166,7 +354,9 @@ void setupGtk()
     g_signal_connect(save, "clicked", G_CALLBACK(Save_Settings), builder);
     g_signal_connect(AddAgent, "clicked", G_CALLBACK(Add_agents), builder);
 
-
+    g_signal_connect(agent, "changed", G_CALLBACK(change_settings), builder);
+    gtk_combo_box_set_active(agent, 0);
+    gtk_combo_box_set_active(foodTarget, 0);
 	gtk_widget_show(window);
     gtk_main();
     free(agents);

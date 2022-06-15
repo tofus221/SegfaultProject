@@ -234,8 +234,8 @@ agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
         
     }
     return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
-                           newSpeed, newResistance, newHrange, agent1->type->birthRate,
-                           agent1->type->birthCost, agent1->type->individualBirthCost);
+                           newSpeed, newResistance, newHrange, agent1->type->birthRate, agent1->type->fertilityRate,
+                           agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
 agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
@@ -268,14 +268,14 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
         newHrange = agentType2->hearingRange;
 
     return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
-                           newSpeed, newResistance, newHrange, agent1->type->birthRate,
-                           agent1->type->birthCost, agent1->type->individualBirthCost);
+                           newSpeed, newResistance, newHrange, agent1->type->birthRate, agent1->type->fertilityRate,
+                           agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
     agent1->type->energy -= agent1->type->birthCost;
     for (int i = 0; i < agent1->type->birthRate; ++i) {
-        if (and() % 100 <= agent1->type->fertilityRate){
+        if (rand() % 100 <= agent1->type->fertilityRate){
             agentType* newType;
             if (agent1->type->asexualReproduction || rand()%2){ //pick if there will be drift or not
                 newType = reproductionWithGeneticDrift(agent1, agent2);
