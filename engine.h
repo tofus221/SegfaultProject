@@ -19,8 +19,8 @@ typedef struct simulation
     SDL_Surface *screen;
     SDL_Surface *terrain;
     SDL_Surface *renderer;
-    struct agentLinkedList* agentList;
-
+    struct agentLinkedList** agentLists;
+    struct agentType *agents;
     int popCount; //this isn't the current population, it is used to determine the id of every agent. It will only increase.
     foodHandler* foodHandler;
     button play;

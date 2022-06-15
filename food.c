@@ -76,7 +76,7 @@ food* initFood(foodTree* father){
     food* res = malloc(sizeof(food));
     res->father = father;
     res->lifeSpan = 10;
-    res->energyToGive = (rand() % 10) + 1;
+    res->energyToGive = (rand() % 50) + 10;
     do {
         res->Xpos = father->Xpos - (int)father->radius + (rand() % (int)father->radius*2);
         res->Ypos = father->Ypos - (int)father->radius + (rand() % (int)father->radius*2);

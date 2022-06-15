@@ -2,7 +2,9 @@
 !*/
 !*.*
 !Makefile
+*.glade~
 
+.vscode
 # Prerequisites
 *.d
 
