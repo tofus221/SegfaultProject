@@ -39,7 +39,10 @@ int popWithPos(struct foodNode* list, int x, int y){
 
 void freeFoodList(struct foodNode* foodList){
     if (foodList->next == NULL)
+    {
+        free(foodList);
         return;
+    }
     struct foodNode* parent;
     while (foodList != NULL){
         parent = foodList;
@@ -48,6 +51,7 @@ void freeFoodList(struct foodNode* foodList){
             free(parent->food);
         free(parent);
     }
+
 }
 
 foodTree* newTree(float radius,int simWidth, int simHeight){
@@ -96,11 +100,8 @@ void freeFoodHandler(foodHandler* foodHandler){
         free(foodHandler->trees[i]);
     }
     freeFoodList(foodHandler->foodList);
+    free(foodHandler);
 };
-
-/*void correctCoordinate(food* food, SDL_Surface){
-
-}*/
 
 void drawFruit(food* curr, SDL_Surface* screen, SDL_Surface* image){
     SDL_Rect fruit = {curr->Xpos, curr->Ypos, 11, 16};

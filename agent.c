@@ -11,6 +11,7 @@
 
 #define GENETICDRIFT 0.01
 #define REPRODUCTION_THRESHOLD 200.0f
+#define AGENT_SIZE 4
 
 
 
@@ -55,6 +56,7 @@ void freeAgentType(agentType* agentT)
 void freeAgent(agent* agt)
 {
     freeAgentType(agt->type);
+    freeSLL(agt->SLL);
     free(agt);
 }
 
@@ -136,7 +138,6 @@ int popWithId(struct agentLinkedList* list, int id, agent** res){
         {
             parent->next = curr->next;
             *res = curr->agent;
-            printf("DED, %s\n", curr->agent->type->name);
             free(curr);
             return 1;
         }
@@ -183,12 +184,12 @@ void drawAgents(SDL_Surface* screen, struct agentLinkedList* list){
     if (list->next == NULL) //check if the list is empty
         return;
     //Uint32 color = SDL_MapRGB(screen->format, 255, 0, 0); temporary, should be really cool to be able to put an image instead
-    SDL_Rect rect;
-    rect.w = 4;
-    rect.h = 4;
 
     list = list->next; // skip the sentinel
     while (list != NULL){
+        SDL_Rect rect;
+        rect.w = AGENT_SIZE;
+        rect.h = AGENT_SIZE;
         agent* agent = list->agent;
         rect.x = (Sint16)agent->Xpos; //weird cast but my IDE seems more fine with it than without, might just be fine tho
         rect.y = (Sint16)agent->Ypos;
@@ -271,11 +272,9 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
         if (rand() % 2){
             agentType* newType;
             if (rand()%2){ //pick if there will be drift or not
-                printf("geneticDrift\n");
                 newType = reproductionWithGeneticDrift(agent1, agent2);
             }
             else {
-                printf("normal\n");
                 newType = normalReproduction(agent1, agent2);
             }
             agent* newAgent = createAgent(newType, agent1->Xpos, agent1->Ypos);
@@ -419,7 +418,7 @@ int tryFeedFruit(agent* mainAgent, simulation* sim){
     }
     if (target != NULL)
     {
-        if(moveTowards(mainAgent,target->Xpos,target->Ypos))
+        if(moveTowards(mainAgent, sim, target->Xpos, target->Ypos))
         {
             mainAgent->type->energy += target->energyToGive;
             popWithPos(sim->foodHandler->foodList, target->Xpos, target->Ypos);

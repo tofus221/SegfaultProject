@@ -46,3 +46,18 @@ int hasSickness(sicknessLinkedList* SLL, sickness* sick)
     }
     return 0;
 }
+
+void freeSLL(sicknessLinkedList *sll)
+{
+    if (sll->next == NULL)
+    {
+        free(sll);
+        return;
+    }
+    struct sicknessLinkedList* parent;
+    while (sll != NULL){
+        parent = sll;
+        sll = sll->next;
+        free(parent);
+    }
+}

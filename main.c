@@ -19,7 +19,7 @@ void update(simulation *sim)
     SDL_BlitSurface(terrain, NULL, screen, NULL);
     while (sim->popCount < 500)
     {
-        agentType* aType = createAgentType("sheep", 2, 100,400,3,6,100);
+        agentType* aType = createAgentType("sheep", 2, 200, 150, 3, 0.5, 40, 2, 300, 50);
         aType->targetAmount = 0;
         aType->color = SDL_MapRGB(screen->format, 0, 255, 0);
         push(sim,createAgent(aType,rand() % (screen->w),rand() % (screen->h)));
@@ -42,7 +42,7 @@ void update(simulation *sim)
                 continue;
             }
             
-            int res = agentBehave(al->agent,sim);
+            agentBehave(al->agent,sim);
             
             al->agent->type->timeLeft -= 1;
         }
@@ -50,7 +50,6 @@ void update(simulation *sim)
         {
             doWander(al->agent,sim);
         }
-        //printf("pop = %i\n",sim->popCount);
         al = al->next;
     }
 
@@ -64,14 +63,13 @@ int main()
     
     terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     srand(time(0));
-    simulation *sim = initEngine(W_WIDTH, W_HEIGHT);
+    simulation *sim = initEngine(W_WIDTH, W_HEIGHT, terrain);
 
-    sim->terrain = terrain;
     int infect[1] ={1}; 
     sickness* droopy_nose = createSickness("droop",0.5,1,0.01,infect,1,SDL_MapRGB(sim->screen->format, 0, 0, 0));
     for (size_t i = 0; i < 50; i++)
     {
-        agentType* aType = createAgentType("wolf", 1, 1000,1000,4,6, 100);
+        agentType* aType = createAgentType("wolf", 1, 200, 150, 4, 0.5, 40, 2, 300, 50);
         aType->targetAmount = 1;
         aType->targetsId = calloc(aType->targetAmount, sizeof(int));
         aType->targetsId[0] = 2;
@@ -81,6 +79,7 @@ int main()
         push(sim, wolf);
     }
     run(sim, update);
+    free(droopy_nose);
     
     free_simulation(sim);
     

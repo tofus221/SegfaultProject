@@ -29,7 +29,7 @@ Uint32 CYAN;
 static Uint32 next_time;
 static int loop = 1;
 
-simulation *initEngine(int w, int h)
+simulation *initEngine(int w, int h, SDL_Surface *terrain)
 {
     SDL_Surface *renderer;
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == -1)
@@ -64,6 +64,7 @@ simulation *initEngine(int w, int h)
     simulation *sim = malloc(sizeof(simulation));
     sim->renderer = renderer;
     sim->screen = screen;
+    sim->terrain = terrain;
     sim->agentList = initLinkedList();
     sim->foodHandler = initFoodHandler(screen->w, screen->h);
     sim->popCount = 0;
@@ -86,6 +87,12 @@ void free_simulation(simulation *sim)
     SDL_FreeSurface(sim->screen);
     freeLinkedList(sim->agentList);
     freeFoodHandler(sim->foodHandler);
+    SDL_FreeSurface(PLAY);
+    SDL_FreeSurface(PAUSE);
+    SDL_FreeSurface(STOP);
+    SDL_FreeSurface(X1);
+    SDL_FreeSurface(X2);
+    SDL_FreeSurface(X3);
     free(sim);
 }
 

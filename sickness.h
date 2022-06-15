@@ -23,4 +23,5 @@ sicknessLinkedList* initSLL();
 void addSickness(sicknessLinkedList* SLL, sickness* sick);
 int hasSickness(sicknessLinkedList* SLL, sickness* sick);
 sickness* createSickness(char* name, float infectiousness, float severity, float mortality, int* canInfect, size_t canInfectAmount, Uint32 color);
+void freeSLL(sicknessLinkedList *sll);
 #endif

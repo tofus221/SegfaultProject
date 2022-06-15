@@ -31,7 +31,7 @@ typedef struct simulation
 } simulation;
 
 
-simulation *initEngine(int w, int h);
+simulation *initEngine(int w, int h, SDL_Surface *terrain);
 void free_simulation(simulation *sim);
 void run(simulation *sim, void (*update)(simulation *));
 
