@@ -39,7 +39,6 @@ struct agentLinkedList{
 
 agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange, int birthRate, float birthCost, float individualBirthCost);
 agent* createAgent(agentType* type, int x, int y);
-void moveAgent(agent* agent, int addX, int addY);
 struct agentLinkedList* initLinkedList();
 void push(simulation* sim, agent* agent);
 int pop(struct agentLinkedList* list, agent** res);

@@ -13,7 +13,8 @@
 #define REPRODUCTION_THRESHOLD 200.0f
 #define AGENT_SIZE 4
 
-
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange, int birthRate, float birthCost, float individualBirthCost){
@@ -60,9 +61,11 @@ void freeAgent(agent* agt)
     free(agt);
 }
 
-void moveAgent(agent* agent, int addX, int addY){
+void moveAgent(agent* agent, int addX, int addY, SDL_Surface *screen){
     agent->Xpos += addX;
     agent->Ypos += addY;
+    agent->Xpos = MIN(MAX(0, agent->Xpos), screen->w);
+    agent->Ypos = MIN(MAX(0, agent->Ypos), screen->h);
 }
 
 //init a linked list to store all the agents currently in the simulation
@@ -326,7 +329,7 @@ int moveTowards(agent* agent, simulation* sim, int x, int y)
     if (distance > (double)agent->type->speed)
     {
         double ratio = (double)agent->type->speed / distance;
-        moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio));
+        moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio), sim->screen);
         agent->type->energy -= energyCost(0.1,agent,sim); //agent->type->speed * agent->type->speed;
         return 0;
     }
