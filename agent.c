@@ -17,7 +17,8 @@
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 //create an Agent Type, meant to be used with the interface.
-agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, float resistance, float hRange, int birthRate, float birthCost, float individualBirthCost){
+agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, 
+float resistance, float hRange, int birthRate, float fertility, float birthCost, float individualBirthCost, float moveCost){
     agentType* newAgent = malloc(sizeof(agentType));
     memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
@@ -31,6 +32,8 @@ agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy,
     newAgent->birthRate = birthRate;
     newAgent->birthCost = birthCost;
     newAgent->individualBirthCost = individualBirthCost;
+    newAgent->moveCost = moveCost;
+    newAgent->fertilityRate = fertility;
     return newAgent;
 }
 
@@ -272,7 +275,7 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
     agent1->type->energy -= agent1->type->birthCost;
     for (int i = 0; i < agent1->type->birthRate; ++i) {
-        if (rand() % 2){
+        if (and() % 100 <= agent1->type->fertilityRate){
             agentType* newType;
             if (rand()%2){ //pick if there will be drift or not
                 newType = reproductionWithGeneticDrift(agent1, agent2);

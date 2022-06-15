@@ -73,6 +73,20 @@
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="RangeData">
+    <property name="lower">1</property>
+    <property name="upper">50</property>
+    <property name="value">1</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="SpeedData">
+    <property name="lower">1</property>
+    <property name="upper">10</property>
+    <property name="value">1</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+  </object>
   <object class="GtkWindow" id="window">
     <property name="can-focus">False</property>
     <child>
@@ -109,7 +123,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkComboBox">
+                  <object class="GtkComboBox" id="Agent">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="margin-bottom">8</property>
@@ -247,7 +261,7 @@
                         <property name="entry-text-column">0</property>
                         <property name="active-id">0</property>
                         <child internal-child="entry">
-                          <object class="GtkEntry">
+                          <object class="GtkEntry" id="foodTarget">
                             <property name="can-focus">False</property>
                             <property name="text" translatable="yes">Grass</property>
                           </object>
@@ -257,33 +271,6 @@
                         <property name="expand">True</property>
                         <property name="fill">True</property>
                         <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="FoodAngle">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Food Angle (in degrees):</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkScale" id="FAngScale">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="adjustment">AngleData</property>
-                        <property name="fill-level">180</property>
-                        <property name="round-digits">0</property>
-                        <property name="digits">0</property>
-                      </object>
-                      <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">3</property>
                       </packing>
                     </child>
                     <child>
@@ -458,7 +445,7 @@
                             <property name="can-focus">True</property>
                             <property name="receives-default">False</property>
                             <property name="draw-indicator">True</property>
-                            <property name="group">Tempered</property>
+                            <property name="group">Hot</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -614,6 +601,19 @@
                 <property name="margin-top">11</property>
                 <property name="orientation">vertical</property>
                 <property name="layout-style">start</property>
+                <child type="center">
+                  <object class="GtkButton" id="SaveSettings">
+                    <property name="label" translatable="yes">Save Current Settings</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">7</property>
+                  </packing>
+                </child>
                 <child>
                   <object class="GtkLabel" id="EnergySection">
                     <property name="visible">True</property>
@@ -627,33 +627,6 @@
                     <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="FoodCost">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                    <property name="label" translatable="yes">Energy use to search for food 
-(in function of the food angle and range):</property>
-                    <property name="justify">center</property>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkScale" id="FoodCostScale">
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="adjustment">FoodData</property>
-                    <property name="round-digits">1</property>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child>
@@ -748,19 +721,5 @@
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkAdjustment" id="RangeData">
-    <property name="lower">1</property>
-    <property name="upper">50</property>
-    <property name="value">1</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="SpeedData">
-    <property name="lower">1</property>
-    <property name="upper">10</property>
-    <property name="value">1</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
   </object>
 </interface>
