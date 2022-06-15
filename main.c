@@ -15,41 +15,25 @@ SDL_Surface *terrain;
 Uint8 r = 0;
 void update(simulation *sim)
 {
+    spawnFood(sim->foodHandler);
     SDL_Surface *screen = sim->screen;
     SDL_BlitSurface(terrain, NULL, screen, NULL);
-    while (sim->popCount < 500)
-    {
-        agentType* aType = createAgentType("sheep", 2, 200, 150, 3, 0.5, 40, 2, 300, 50);
-        aType->targetAmount = 0;
-        aType->color = SDL_MapRGB(screen->format, 0, 255, 0);
-        push(sim,createAgent(aType,rand() % (screen->w),rand() % (screen->h)));
-    }
-    
     for (struct agentLinkedList *al = sim->agentList->next; al != NULL;)
     {
-        
-        
-        if (al->agent->type->typeId == 1)
+        if (al->agent->type->energy <= 0.0f || al->agent->type->timeLeft < 0.0f)
         {
-            if (al->agent->type->energy <= 0.0f || al->agent->type->timeLeft < 0.0f)
-            {
-                struct agentLinkedList *temp = al;
-                al = al->next;
-                agent* res;
-                popWithId(sim->agentList,temp->agent->id,&res);
-                freeAgent(res);
-                sim->popCount--;
-                continue;
-            }
-            
-            agentBehave(al->agent,sim);
-            
-            al->agent->type->timeLeft -= 1;
+            struct agentLinkedList *temp = al;
+            al = al->next;
+            agent* res;
+            popWithId(sim->agentList,temp->agent->id,&res);
+            freeAgent(res);
+            sim->popCount--;
+            continue;
         }
-        else
-        {
-            doWander(al->agent,sim);
-        }
+        
+        agentBehave(al->agent,sim);
+        
+        al->agent->type->timeLeft -= 1;
         al = al->next;
     }
 
@@ -67,7 +51,7 @@ int main()
 
     int infect[1] ={1}; 
     sickness* droopy_nose = createSickness("droop",0.5,1,0.01,infect,1,SDL_MapRGB(sim->screen->format, 0, 0, 0));
-    for (size_t i = 0; i < 50; i++)
+    for (size_t i = 0; i < 10; i++)
     {
         agentType* aType = createAgentType("wolf", 1, 200, 150, 4, 0.5, 40, 2, 300, 50);
         aType->targetAmount = 1;
@@ -78,6 +62,16 @@ int main()
         addSickness(wolf->SLL,droopy_nose);
         push(sim, wolf);
     }
+
+    for (size_t i = 0; i < 600; i++)
+    {
+        agentType* aType = createAgentType("sheep", 2, 200, 150, 3, 0.5, 100, 2, 300, 50);
+        aType->targetAmount = 0;
+        aType->color = SDL_MapRGB(sim->screen->format, 0, 255, 0);
+        agent* sheep = createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h));
+        push(sim, sheep);
+    }
+
     run(sim, update);
     free(droopy_nose);
     
