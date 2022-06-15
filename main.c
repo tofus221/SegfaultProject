@@ -1,15 +1,7 @@
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
-#include "agent.h"
-#include "sickness.h"
-#include "engine.h"
-#include "pixelOp.h"
-#include "perlin.h"
-#include <math.h>
-
+#include "interface.h"
 
 int main()
 {
+    setupGtk();
     return 0;
 }
