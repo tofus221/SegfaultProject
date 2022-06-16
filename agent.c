@@ -394,7 +394,7 @@ int tryMate(agent* mainAgent, struct agentLinkedList* list, SDL_Surface* screen,
 {
     agent* target = NULL;
     double minDist = 0;
-    if (mainAgent->type->asexual && mainAgent->type->energy >= REPRODUCTION_THRESHOLD && mainAgent->type->lifeSpan <= mainAgent->type->minLifeSpanForReprod){
+    if (mainAgent->type->asexual && mainAgent->type->energy >= REPRODUCTION_THRESHOLD && mainAgent->type->timeLeft <= mainAgent->type->minLifeSpanForReprod){
         reproduction(mainAgent, mainAgent, list);
         return 1;
     }
@@ -405,7 +405,7 @@ int tryMate(agent* mainAgent, struct agentLinkedList* list, SDL_Surface* screen,
         {
             continue;
         }
-        if ((mainAgent->type->typeId == currAgent->type->typeId) && (currAgent->type->energy > REPRODUCTION_THRESHOLD) && mainAgent->type->lifeSpan <= mainAgent->type->minLifeSpanForReprod)
+        if ((mainAgent->type->typeId == currAgent->type->typeId) && (currAgent->type->energy > REPRODUCTION_THRESHOLD) && mainAgent->type->timeLeft <= mainAgent->type->minLifeSpanForReprod)
         {
             int xOffset = currAgent->Xpos - mainAgent->Xpos;
             int yOffset = currAgent->Ypos - mainAgent->Ypos;

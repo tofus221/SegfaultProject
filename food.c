@@ -70,7 +70,7 @@ foodHandler* initFoodHandler(int simWidth, int simHeight){
     foodHandler* res = malloc(sizeof(foodHandler));
     res->foodList = initFoodList();
     for (int i = 0; i < NUMBEROFTREE; ++i) {
-        res->trees[i] = newTree(25, simWidth, simHeight);
+        res->trees[i] = newTree(50, simWidth, simHeight);
     }
     return res;
 }
