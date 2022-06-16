@@ -1,7 +1,7 @@
 #ifndef STATS_H
 #define STATS_H
 
-#include "engine.h"
+#include "agent.h"
 
 typedef struct SimList
 {

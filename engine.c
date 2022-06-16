@@ -1,7 +1,6 @@
 #include <SDL/SDL_mouse.h>
 #include <err.h>
 #include "engine.h"
-#include "agent.h"
 #include "pixelOp.h"
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))

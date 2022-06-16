@@ -3,7 +3,9 @@
 
 #include <SDL/SDL.h>
 #include "food.h"
+#include "agent.h"
 #include "stats.h"
+
 
 typedef struct button
 {
@@ -36,5 +38,4 @@ simulation *initEngine(int w, int h, SDL_Surface *terrain);
 void free_simulation(simulation *sim);
 void run(simulation *sim, void (*update)(simulation *));
 
-#include "agent.h"
 #endif
