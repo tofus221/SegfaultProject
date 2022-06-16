@@ -488,7 +488,7 @@ int agentBehave(agent* mainAgent, struct agentLinkedList* list, foodHandler* foo
             return 2;
         }
     }
-    if ((mainAgent->type->targetAmount == 0 && tryFeedFruit(mainAgent, foodHandler, screen, terrain)) || tryFeedAgent(mainAgent, list, screen, terrain))
+    if ((mainAgent->type->targetAmount == 0 && tryFeedFruit(mainAgent, foodHandler, screen, terrain)) || (mainAgent->type->targetAmount > 0 && tryFeedAgent(mainAgent, list, screen, terrain)))
     {
         return 1;
     }

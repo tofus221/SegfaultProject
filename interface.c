@@ -198,7 +198,7 @@ void Save_Settings(GtkButton *button __attribute__((unused)), gpointer builder)
     else
     {
         activeAgent->targetAmount = 1;
-        activeAgent->targetsId[0] = target;
+        activeAgent->targetsId[0] = target - 1;
     }
 
     char buffer[5];
