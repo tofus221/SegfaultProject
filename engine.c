@@ -72,6 +72,7 @@ simulation *initEngine(int w, int h, SDL_Surface *terrain)
     sim->popCount = 0;
     sim->tickInterval = SLOW;
     sim->isPaused = 0;
+    sim->sl = initSL();
 
     int dim = MIN(w, h) / 15;
     button play = {x: 10, y: 10, w: 50, h: 50, image: PAUSE};
@@ -89,6 +90,7 @@ void free_simulation(simulation *sim)
     SDL_FreeSurface(sim->screen);
     freeLinkedList(sim->agentList);
     freeFoodHandler(sim->foodHandler);
+    freeSL(sim->sl);
     SDL_FreeSurface(PLAY);
     SDL_FreeSurface(PAUSE);
     SDL_FreeSurface(STOP);

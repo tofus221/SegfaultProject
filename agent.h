@@ -4,6 +4,7 @@
 #include "engine.h"
 #include "sickness.h"
 
+
 typedef struct agentType{
     char* name;
     int typeId;

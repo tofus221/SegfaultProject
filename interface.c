@@ -5,6 +5,7 @@
 #include <time.h>
 #include "engine.h"
 #include "perlin.h"
+#include "stats.h"
 #include <math.h>
 
 #define W_WIDTH 700
@@ -15,6 +16,7 @@ Uint8 r = 0;
 agentType **agents;
 agentType *activeAgent;
 size_t nbAgents = 1;
+int frameCount = 0;
 // Function to swap two numbers
 void swap(char *x, char *y) {
     char t = *x; *x = *y; *y = t;
@@ -101,6 +103,12 @@ void update(simulation *sim)
 
     drawAgents(screen,sim->agentList);
     drawFood(sim->foodHandler, screen);
+    if(frameCount % 100 == 0)
+    {
+        computeAverages(sim->agentList, nbAgents, sim->agents);
+        pushATs(sim->sl, sim->agents, nbAgents);
+    }
+    frameCount++;
 }
 
 void init_simulation(GtkButton *button __attribute__((unused)), gpointer user_data __attribute__((unused)))
@@ -108,6 +116,7 @@ void init_simulation(GtkButton *button __attribute__((unused)), gpointer user_da
     terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     srand(time(0));
     simulation *sim = initEngine(W_WIDTH, W_HEIGHT, terrain);
+    sim->agents = calloc(nbAgents, sizeof(agentType));
 
     int infect[1] ={1}; 
     sickness* droopy_nose = createSickness("droop",0.5,1,0.01,infect,1,SDL_MapRGB(sim->screen->format, 0, 0, 0));
@@ -130,8 +139,11 @@ void init_simulation(GtkButton *button __attribute__((unused)), gpointer user_da
     }
 
     run(sim, update);
+
+    saveStats(sim->sl, nbAgents);
     free(droopy_nose);
     
+    free(sim->agents);
     free_simulation(sim);
     
     SDL_FreeSurface(terrain);
