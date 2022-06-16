@@ -216,56 +216,51 @@ float geneticDrift(float value){
 }
 
 agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
-    float newLifeSpan, newEnergy, newSpeed, newResistance, newHrange;
+    float newEnergy, newSpeed, newResistance, newHrange , newFertilityRate;
+    newEnergy = agent1->type->energy/2;
     agentType* agentType1 = agent1->type;
     agentType* agentType2 = agent2->type;
     if (rand()%2){
-        newLifeSpan = geneticDrift(agentType1->lifeSpan);
-        newEnergy = geneticDrift(agentType1->energy);
         newSpeed = geneticDrift(agentType1->speed);
         newResistance = geneticDrift(agentType1->resistance);
         newHrange = geneticDrift(agentType1->hearingRange);
+        newFertilityRate = geneticDrift(agent1->type->fertilityRate);
     } else{
-        newLifeSpan = geneticDrift(agentType2->lifeSpan);
-        newEnergy = geneticDrift(agentType2->energy);
         newSpeed = geneticDrift(agentType2->speed);
         newResistance = geneticDrift(agentType2->resistance);
         newHrange = geneticDrift(agentType2->hearingRange);
-        
+        newFertilityRate = geneticDrift(agent1->type->fertilityRate);
     }
-    return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
-                           newSpeed, newResistance, newHrange, agent1->type->birthRate, agent1->type->fertilityRate,
+    return createAgentType(agentType1->name, agentType1->typeId, 200, newEnergy,
+                           newSpeed, newResistance, newHrange, agent1->type->birthRate, newFertilityRate,
                            agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
 agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
-    float newLifeSpan, newEnergy, newSpeed, newResistance, newHrange;
+    float newLifeSpan, newEnergy, newSpeed, newResistance, newHrange, newFertilityRate;
+    newEnergy = agent1->type->energy/2;
     agentType* agentType1 = agent1->type;
     agentType* agentType2 = agent2->type;
     if (rand()%2)
         newLifeSpan = agentType1->lifeSpan;
     else
         newLifeSpan = agentType2->lifeSpan;
-    
-    if (rand()%2)
-        newEnergy = agentType1->energy;
-    else
-        newEnergy= agentType2->energy;
-    
     if (rand()%2)
         newSpeed = agentType1->speed;
     else
         newSpeed = agentType2->speed;
-    
     if (rand()%2)
         newResistance = agentType1->resistance;
     else
         newResistance = agentType2->resistance;
-    
     if (rand()%2)
         newHrange = agentType1->hearingRange;
     else
         newHrange = agentType2->hearingRange;
+    if (rand()%2)
+        newFertilityRate = agentType1->fertilityRate;
+    else
+        newFertilityRate = agentType2->fertilityRate;
 
     return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
                            newSpeed, newResistance, newHrange, agent1->type->birthRate, agent1->type->fertilityRate,
@@ -274,6 +269,7 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
 
 void reproduction(agent* agent1, agent* agent2, simulation* sim){
     agent1->type->energy -= agent1->type->birthCost;
+    agent2->type->energy -= agent2->type->birthCost;
     for (int i = 0; i < agent1->type->birthRate; ++i) {
         if (rand() % 100 <= agent1->type->fertilityRate){
             agentType* newType;
@@ -552,8 +548,10 @@ void doWander(agent* mainAgent, simulation* sim)
 {
     if (mainAgent->wanderX == mainAgent->Xpos || mainAgent->wanderX == -1 || mainAgent->wanderY == mainAgent->Ypos)
     {
-        mainAgent->wanderX = rand() % (sim->screen->w); //MIN((mainAgent.Xpos - 100) + (rand() % 200))
-        mainAgent->wanderY = rand() % (sim->screen->h);
+        int newX = (mainAgent->Xpos - 100) + (rand() % 200);
+        int newY = (mainAgent->Ypos - 100) + (rand() % 200);
+        mainAgent->wanderX = MIN(MAX(0, newX), sim->screen->w);
+        mainAgent->wanderY = MIN(MAX(0, newY), sim->screen->h);
     }
     moveTowards(mainAgent, sim, mainAgent->wanderX,mainAgent->wanderY);
 }
