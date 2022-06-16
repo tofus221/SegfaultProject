@@ -33,7 +33,7 @@ typedef struct foodHandler{
 
 foodHandler* initFoodHandler(int simWidth, int simHeight);
 int popWithPos(struct foodNode* list, int x, int y);
-void spawnFood(foodHandler* handler);
+void spawnFood(foodHandler* handler, int w, int h);
 void drawFood(foodHandler* foodHandler, SDL_Surface* surface);
 void freeFoodHandler(foodHandler* foodHandler);
 

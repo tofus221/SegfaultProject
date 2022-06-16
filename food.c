@@ -3,6 +3,9 @@
 #include <math.h>
 #include <SDL/SDL_video.h>
 
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
 struct foodNode* initFoodList(){
     struct foodNode* list = malloc(sizeof(struct foodNode));
     list->food = NULL;
@@ -72,7 +75,7 @@ foodHandler* initFoodHandler(int simWidth, int simHeight){
     return res;
 }
 
-food* initFood(foodTree* father){
+food* initFood(foodTree* father, int w, int h){
     food* res = malloc(sizeof(food));
     res->father = father;
     res->lifeSpan = 10;
@@ -80,15 +83,18 @@ food* initFood(foodTree* father){
     do {
         res->Xpos = father->Xpos - (int)father->radius + (rand() % (int)father->radius*2);
         res->Ypos = father->Ypos - (int)father->radius + (rand() % (int)father->radius*2);
+
+        res->Xpos = MIN(MAX(0, res->Xpos), w);
+        res->Ypos = MIN(MAX(0, res->Ypos), h);
     } while (sqrt(pow(res->Xpos - father->Xpos, 2) + pow(res->Ypos - father->Ypos, 2)) > father->radius);
     return res;
 }
 
-void spawnFood(foodHandler* handler){
+void spawnFood(foodHandler* handler, int w, int h){
     food* toSpawn;
     for (int i = 0; i < NUMBEROFTREE; ++i) {
         if (handler->trees[i]->currentFood < MAXIMUMFOODPERTREE){
-            toSpawn = initFood(handler->trees[i]);
+            toSpawn = initFood(handler->trees[i], w, h);
             handler->trees[i]->currentFood++;
             pushFood(handler->foodList, toSpawn);
         }
