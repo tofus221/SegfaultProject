@@ -133,6 +133,8 @@ void init_simulation(GtkButton *button __attribute__((unused)), gpointer user_da
             agent *a = createAgent(aType, rand() % W_WIDTH, rand() % W_HEIGHT);
             addSickness(a->SLL, droopy_nose);
             push(sim->agentList, a);
+
+            sim->agents[i].name = agents[i]->name;
         }
         
     }
