@@ -88,11 +88,10 @@ void update(simulation *sim)
             agent* res;
             popWithId(sim->agentList,temp->agent->id,&res);
             freeAgent(res);
-            sim->popCount--;
             continue;
         }
         
-        agentBehave(al->agent,sim);
+        agentBehave(al->agent,sim->agentList, sim->foodHandler, sim->screen, sim->terrain);
         
         al->agent->type->timeLeft -= 1;
         al = al->next;
@@ -124,7 +123,7 @@ void init_simulation(GtkButton *button __attribute__((unused)), gpointer user_da
             aType->color = color;
             agent *a = createAgent(aType, rand() % W_WIDTH, rand() % W_HEIGHT);
             addSickness(a->SLL, droopy_nose);
-            push(sim, a);
+            push(sim->agentList, a);
         }
         
     }

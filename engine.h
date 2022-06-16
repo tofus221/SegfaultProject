@@ -21,7 +21,7 @@ typedef struct simulation
     SDL_Surface *renderer;
     struct agentLinkedList* agentList;
     struct agentType *agents;
-    int popCount; //this isn't the current population, it is used to determine the id of every agent. It will only increase.
+    //this isn't the current population, it is used to determine the id of every agent. It will only increase.
     foodHandler* foodHandler;
     button play;
     button speed;

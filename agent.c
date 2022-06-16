@@ -6,8 +6,6 @@
 #include "sickness.h"
 #include "pixelOp.h"
 #include <SDL/SDL.h>
-#include "engine.h"
-#include "food.h"
 
 #define GENETICDRIFT 0.01
 #define REPRODUCTION_THRESHOLD 200.0f
@@ -82,13 +80,12 @@ struct agentLinkedList* initLinkedList(){
     return list;
 }
 
-int getNewID(simulation* sim)
+int getNewID(struct agentLinkedList* list)
 {
     int attemptID = rand();
     int isValid = 0;
     while(!isValid)
     {
-        struct agentLinkedList* list = sim->agentList;
         isValid = 1;
         for (struct agentLinkedList* curr = list->next; curr != NULL && isValid; curr = curr->next)
         {
@@ -101,8 +98,7 @@ int getNewID(simulation* sim)
 
 
 //push an agent to the list.
-void push(simulation* sim, agent* agent){
-    struct agentLinkedList* list = sim->agentList;
+void push(struct agentLinkedList* list, agent* agent){
     struct agentLinkedList* newBlock = malloc(sizeof(struct agentLinkedList));
     newBlock->next = NULL;
     if (list->next != NULL)
@@ -111,28 +107,7 @@ void push(simulation* sim, agent* agent){
     }
     list->next = newBlock;
     newBlock->agent = agent;
-    agent->id = getNewID(sim);
-    sim->popCount++;
-}
-
-//pops an agent in the list and return it in the res argument.
-//return 0 if everything went well, -1 otherwise.
-int pop(struct agentLinkedList* list, agent** res){
-    if (list->next == NULL) {
-        printf("pop: you are trying to pop an empty list\n");
-        return -1;
-    }
-    struct agentLinkedList* tmp = list;
-    struct agentLinkedList* parent;
-    while (tmp->next != NULL){
-        parent = tmp;
-        tmp = tmp->next;
-    }
-    parent->next = NULL;
-    *res = tmp->agent;
-    free(tmp);
-    return 0;
-
+    agent->id = getNewID(list);
 }
 
 
@@ -152,26 +127,6 @@ int popWithId(struct agentLinkedList* list, int id, agent** res){
         
     }
     return 0;
-}
-
-//return the agent with the ID given without popping it off the list. return NULL if the list is empty or no agent with ID is found.
-agent* peekWithID(struct agentLinkedList* list, int id){
-    if (list->next == NULL){
-        printf("peekWithID: The list is empty.\n");
-        return NULL;
-    }
-
-    struct agentLinkedList* tmp = list->next;
-    while (tmp->next != NULL){
-        if (tmp->agent->id == id)
-            return tmp->agent;
-        tmp = tmp->next;
-    }
-    if (tmp->agent->id != id) {
-        printf("peekWithID: No agents with this ID was found.\n");
-        return NULL;
-    }
-    return tmp->agent;
 }
 
 //free the linked list.
@@ -269,7 +224,7 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
                            agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
-void reproduction(agent* agent1, agent* agent2, simulation* sim){
+void reproduction(agent* agent1, agent* agent2, struct agentLinkedList* list){
     agent1->type->energy -= agent1->type->birthCost;
     agent2->type->energy -= agent2->type->birthCost;
     for (int i = 0; i < agent1->type->birthRate; ++i) {
@@ -291,7 +246,7 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
             }
 
             newAgent->type->color = agent1->type->color;
-            push(sim, newAgent);
+            push(list, newAgent);
 
             agent1->type->energy -= agent1->type->individualBirthCost;
         }
@@ -300,7 +255,7 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
 
 
 
-float energyCost(float actionCost, agent* mainAgent, simulation* sim)
+float energyCost(float actionCost, agent* mainAgent, SDL_Surface* terrain)
 {
     float cost = actionCost;
     for (sicknessLinkedList* curr = mainAgent->SLL->next; curr != NULL; curr = curr->next )
@@ -310,14 +265,14 @@ float energyCost(float actionCost, agent* mainAgent, simulation* sim)
     Uint8 r = 0;
     Uint8 g = 0;
     Uint8 b = 0;
-    SDL_GetRGB(get_pixel(sim->terrain, mainAgent->Xpos,mainAgent->Ypos),sim->terrain->format,&r, &g, &b);
+    SDL_GetRGB(get_pixel(terrain, mainAgent->Xpos,mainAgent->Ypos),terrain->format,&r, &g, &b);
     float res = (float)(r + g + b) / (3 * 256);
     cost += (mainAgent->type->resistance - res) * (mainAgent->type->resistance - res) * actionCost;
     return cost;
 }
 
 
-int moveTowards(agent* agent, simulation* sim, int x, int y)
+int moveTowards(agent* agent, SDL_Surface* terrain, SDL_Surface* screen, int x, int y)
 {
     if (agent->type->speed <= 0)
     {
@@ -330,14 +285,14 @@ int moveTowards(agent* agent, simulation* sim, int x, int y)
     if (distance > (double)agent->type->speed)
     {
         double ratio = (double)agent->type->speed / distance;
-        moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio), sim->screen);
-        agent->type->energy -= energyCost(agent->type->moveCost/10,agent,sim); //agent->type->speed * agent->type->speed;
+        moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio), screen);
+        agent->type->energy -= energyCost(agent->type->moveCost/10,agent,terrain); //agent->type->speed * agent->type->speed;
         return 0;
     }
-    agent->Xpos = MIN(MAX(0, x), sim->screen->w-1);
-    agent->Ypos = MIN(MAX(0, y), sim->screen->h-1);
+    agent->Xpos = MIN(MAX(0, x), screen->w-1);
+    agent->Ypos = MIN(MAX(0, y), screen->h-1);
     //printf("x: %i, y: %i\n", agent->Xpos, agent->Ypos);
-    agent->type->energy -= energyCost(agent->type->moveCost/10,agent,sim);  //(float) distance * distance;
+    agent->type->energy -= energyCost(agent->type->moveCost/10,agent,terrain);  //(float) distance * distance;
     return 1;
 }
 
@@ -351,11 +306,11 @@ int canSeeAgent(agent* mainAgent, agent* targetAgent)
 }
 
 
-int tryFeedAgent(agent* mainAgent, simulation* sim)
+int tryFeedAgent(agent* mainAgent, struct agentLinkedList* list,SDL_Surface* screen, SDL_Surface* terrain)
 {
     agent* target = NULL;
     double minDist = 0;
-    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
+    for (struct agentLinkedList* curr = list->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
         if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)) || currAgent->type->timeLeft <= 0)
@@ -380,11 +335,10 @@ int tryFeedAgent(agent* mainAgent, simulation* sim)
     }
     if (target != NULL)
     {
-        if(moveTowards(mainAgent,sim,target->Xpos,target->Ypos))
+        if(moveTowards(mainAgent,terrain, screen,target->Xpos,target->Ypos))
         {
             mainAgent->type->energy += target->type->energy;
-            popWithId(sim->agentList,target->id,&target);
-            sim->popCount--;
+            popWithId(list,target->id,&target);
             freeAgent(target);
         }
         return 1;
@@ -400,10 +354,10 @@ int canSeeFruit(agent* mainAgent, food* fruit){
     return distance <= (double)mainAgent->type->hearingRange;
 }
 
-int tryFeedFruit(agent* mainAgent, simulation* sim){
+int tryFeedFruit(agent* mainAgent, foodHandler* foodHandler,SDL_Surface* screen, SDL_Surface* terrain){
     food* target = NULL;
     double minDist = 0;
-    for (struct foodNode* curr = sim->foodHandler->foodList->next; curr != NULL; curr = curr->next)
+    for (struct foodNode* curr = foodHandler->foodList->next; curr != NULL; curr = curr->next)
     {
         food* currFruit = curr->food;
         if (!canSeeFruit(mainAgent, currFruit) || currFruit->lifeSpan == 0)
@@ -423,10 +377,10 @@ int tryFeedFruit(agent* mainAgent, simulation* sim){
     }
     if (target != NULL)
     {
-        if(moveTowards(mainAgent, sim, target->Xpos, target->Ypos))
+        if(moveTowards(mainAgent, terrain, screen, target->Xpos, target->Ypos))
         {
             mainAgent->type->energy += target->energyToGive;
-            popWithPos(sim->foodHandler->foodList, target->Xpos, target->Ypos);
+            popWithPos(foodHandler->foodList, target->Xpos, target->Ypos);
             target->father->currentFood--;
             free(target);
         }
@@ -436,15 +390,15 @@ int tryFeedFruit(agent* mainAgent, simulation* sim){
     return 0;
 }
 
-int tryMate(agent* mainAgent, simulation* sim)
+int tryMate(agent* mainAgent, struct agentLinkedList* list, SDL_Surface* screen, SDL_Surface* terrain)
 {
     agent* target = NULL;
     double minDist = 0;
     if (mainAgent->type->asexual && mainAgent->type->energy >= REPRODUCTION_THRESHOLD && mainAgent->type->lifeSpan <= mainAgent->type->minLifeSpanForReprod){
-        reproduction(mainAgent, mainAgent, sim);
+        reproduction(mainAgent, mainAgent, list);
         return 1;
     }
-    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
+    for (struct agentLinkedList* curr = list->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
         if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent) || currAgent->type->timeLeft <= 0))
@@ -465,9 +419,9 @@ int tryMate(agent* mainAgent, simulation* sim)
     }
     if (target != NULL)
     {
-        if (moveTowards(mainAgent, sim, target->Xpos, target->Ypos))
+        if (moveTowards(mainAgent, terrain, screen, target->Xpos, target->Ypos))
         {
-            reproduction(mainAgent,target,sim);
+            reproduction(mainAgent,target,list);
         }
         return 1;
     }
@@ -484,10 +438,10 @@ int canInfectAgent(agent* mainAgent, agent* targetAgent)
 }
 
 
-void doInfect(agent* mainAgent, simulation* sim)
+void doInfect(agent* mainAgent, struct agentLinkedList* list)
 {
     
-    for (struct agentLinkedList* curr = sim->agentList->next; curr != NULL; curr = curr->next)
+    for (struct agentLinkedList* curr = list->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
         if (mainAgent == currAgent || (!canInfectAgent(mainAgent,currAgent) || currAgent->type->timeLeft <= 0))
@@ -522,39 +476,39 @@ void doInfect(agent* mainAgent, simulation* sim)
 
 
 // makes an agent behave; returns 2 when trying to mate, 1 when trying to feed, and 0 when wandering.
-int agentBehave(agent* mainAgent, simulation* sim)
+int agentBehave(agent* mainAgent, struct agentLinkedList* list, foodHandler* foodHandler,SDL_Surface* screen, SDL_Surface* terrain)
 {  
     //printf("behave\n");
-    doInfect(mainAgent,sim);
+    doInfect(mainAgent,list);
     if (mainAgent->type->energy > REPRODUCTION_THRESHOLD)
     {
-        if (tryMate(mainAgent, sim))
+        if (tryMate(mainAgent, list, screen, terrain))
         {
             //printf("mated\n");
             return 2;
         }
     }
-    if ((mainAgent->type->targetAmount == 0 && tryFeedFruit(mainAgent, sim)) || tryFeedAgent(mainAgent, sim))
+    if ((mainAgent->type->targetAmount == 0 && tryFeedFruit(mainAgent, foodHandler, screen, terrain)) || tryFeedAgent(mainAgent, list, screen, terrain))
     {
         return 1;
     }
 
 
-    doWander(mainAgent,sim);
+    doWander(mainAgent,screen, terrain);
 
     return 0;
     
 }
 
 
-void doWander(agent* mainAgent, simulation* sim)
+void doWander(agent* mainAgent, SDL_Surface* screen, SDL_Surface* terrain)
 {
     if (mainAgent->wanderX == mainAgent->Xpos || mainAgent->wanderX == -1 || mainAgent->wanderY == mainAgent->Ypos)
     {
         int newX = (mainAgent->Xpos - 100) + (rand() % 200);
         int newY = (mainAgent->Ypos - 100) + (rand() % 200);
-        mainAgent->wanderX = MIN(MAX(0, newX), sim->screen->w);
-        mainAgent->wanderY = MIN(MAX(0, newY), sim->screen->h);
+        mainAgent->wanderX = MIN(MAX(0, newX), screen->w);
+        mainAgent->wanderY = MIN(MAX(0, newY), screen->h);
     }
-    moveTowards(mainAgent, sim, mainAgent->wanderX,mainAgent->wanderY);
+    moveTowards(mainAgent, terrain, screen, mainAgent->wanderX,mainAgent->wanderY);
 }

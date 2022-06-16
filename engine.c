@@ -69,7 +69,6 @@ simulation *initEngine(int w, int h, SDL_Surface *terrain)
     sim->terrain = terrain;
     sim->agentList = initLinkedList();
     sim->foodHandler = initFoodHandler(screen->w, screen->h);
-    sim->popCount = 0;
     sim->tickInterval = SLOW;
     sim->isPaused = 0;
 
