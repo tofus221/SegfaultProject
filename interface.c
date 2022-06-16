@@ -193,7 +193,7 @@ void Save_Settings(GtkButton *button __attribute__((unused)), gpointer builder)
     if(target == 0)
     {
         activeAgent->targetAmount = 0;
-        activeAgent->targetsId[0] = target;
+        activeAgent->targetsId[0] = target - 1;
     }
     else
     {
@@ -264,7 +264,7 @@ void Add_agents(GtkButton *button __attribute__((unused)), gpointer builder)
     gtk_adjustment_get_value(MovingEnergy));
     agents[nbAgents - 1]->targetAmount = 0;
     agents[nbAgents - 1]->targetsId = calloc(1, sizeof(int));
-    
+    agents[nbAgents - 1]->targetsId[0] = -1;
     activeAgent = agents[nbAgents - 1];
 
     gtk_combo_box_set_active_iter(ComboAgent, &tmp);
@@ -292,7 +292,7 @@ void change_settings(GtkComboBox *agent, gpointer builder)
     int id = gtk_combo_box_get_active(agent);
     activeAgent = agents[id];
     gtk_entry_set_text(name, activeAgent->name);
-    gtk_combo_box_set_active(foodTarget, activeAgent->targetsId[0]);
+    gtk_combo_box_set_active(foodTarget, activeAgent->targetsId[0] + 1);
     gtk_adjustment_set_value(FoodRange, activeAgent->hearingRange);
     gtk_adjustment_set_value(speed, activeAgent->speed);
     gtk_entry_set_text(lifeTime, itoa(activeAgent->lifeSpan, buffer, 10));
@@ -371,6 +371,7 @@ void setupGtk()
     gtk_adjustment_get_value(MovingEnergy));
     agents[0]->targetAmount = 0;
     agents[0]->targetsId = calloc(1, sizeof(int));
+    agents[0]->targetsId[0] = -1;
     activeAgent = agents[0];
 
 	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);

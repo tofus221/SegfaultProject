@@ -8,7 +8,7 @@
 #include <SDL/SDL.h>
 
 #define GENETICDRIFT 0.01
-#define REPRODUCTION_THRESHOLD 200.0f
+#define REPRODUCTION_THRESHOLD 50.0f
 #define AGENT_SIZE 4
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -224,6 +224,11 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
                            agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
+int canReproduce(agent* mainAgent)
+{
+    return mainAgent->type->energy > (mainAgent->type->individualBirthCost * mainAgent->type->birthRate) + mainAgent->type->birthCost + REPRODUCTION_THRESHOLD;
+}
+
 void reproduction(agent* agent1, agent* agent2, struct agentLinkedList* list){
     agent1->type->energy -= agent1->type->birthCost;
     agent2->type->energy -= agent2->type->birthCost;
@@ -274,6 +279,8 @@ float energyCost(float actionCost, agent* mainAgent, SDL_Surface* terrain)
 
 int moveTowards(agent* agent, SDL_Surface* terrain, SDL_Surface* screen, int x, int y)
 {
+    x = MIN(MAX(0, x), screen->w-1);
+    y = MIN(MAX(0, y), screen->h-1);
     if (agent->type->speed <= 0)
     {
         return 0;
@@ -305,6 +312,41 @@ int canSeeAgent(agent* mainAgent, agent* targetAgent)
     return distance <= (double)mainAgent->type->hearingRange;
 }
 
+int tryFlee(agent* mainAgent, struct agentLinkedList* list,SDL_Surface* screen, SDL_Surface* terrain)
+{
+    agent* target = NULL;
+    double minDist = 0;
+    for (struct agentLinkedList* curr = list->next; curr != NULL; curr = curr->next)
+    {
+        agent* currAgent = curr->agent;
+        if (mainAgent->type->typeId == currAgent->type->typeId || (!canSeeAgent(mainAgent,currAgent)) || currAgent->type->timeLeft <= 0)
+        {
+            continue;
+        }
+        for (int i = 0; i < currAgent->type->targetAmount; i++)
+        {
+            if (currAgent->type->targetsId[i] == mainAgent->type->typeId)
+            {
+                int xOffset = mainAgent->Xpos - currAgent->Xpos;
+                int yOffset = mainAgent->Ypos - currAgent->Ypos;
+                double distance = sqrt((double)xOffset*xOffset + yOffset*yOffset);
+                if (target == NULL || minDist > distance)
+                {
+                    minDist = distance;
+                    target = currAgent;
+                }
+            }
+        }
+    }
+    if (target != NULL)
+    {
+        int fleeX = mainAgent->Xpos + (mainAgent->Xpos - target->Xpos);
+        int fleeY = mainAgent->Ypos + (mainAgent->Ypos - target->Ypos);
+        moveTowards(mainAgent,terrain, screen, fleeX, fleeY);
+        return 1;
+    }
+    return 0;
+}
 
 int tryFeedAgent(agent* mainAgent, struct agentLinkedList* list,SDL_Surface* screen, SDL_Surface* terrain)
 {
@@ -313,7 +355,7 @@ int tryFeedAgent(agent* mainAgent, struct agentLinkedList* list,SDL_Surface* scr
     for (struct agentLinkedList* curr = list->next; curr != NULL; curr = curr->next)
     {
         agent* currAgent = curr->agent;
-        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)) || currAgent->type->timeLeft <= 0)
+        if (mainAgent == currAgent || (!canSeeAgent(mainAgent,currAgent)) || !canSeeAgent(currAgent,mainAgent) || currAgent->type->timeLeft <= 0)
         {
             continue;
         }
@@ -405,7 +447,7 @@ int tryMate(agent* mainAgent, struct agentLinkedList* list, SDL_Surface* screen,
         {
             continue;
         }
-        if ((mainAgent->type->typeId == currAgent->type->typeId) && (currAgent->type->energy > REPRODUCTION_THRESHOLD) && mainAgent->type->timeLeft <= mainAgent->type->minLifeSpanForReprod)
+        if ((mainAgent->type->typeId == currAgent->type->typeId) && canReproduce(currAgent) && mainAgent->type->timeLeft <= mainAgent->type->minLifeSpanForReprod)
         {
             int xOffset = currAgent->Xpos - mainAgent->Xpos;
             int yOffset = currAgent->Ypos - mainAgent->Ypos;
@@ -480,17 +522,25 @@ int agentBehave(agent* mainAgent, struct agentLinkedList* list, foodHandler* foo
 {  
     //printf("behave\n");
     doInfect(mainAgent,list);
-    if (mainAgent->type->energy > REPRODUCTION_THRESHOLD)
+    int canReprod = canReproduce(mainAgent); 
+    if (canReprod)
     {
         if (tryMate(mainAgent, list, screen, terrain))
         {
             //printf("mated\n");
             return 2;
-        }
+        }    
     }
-    if ((mainAgent->type->targetAmount == 0 && tryFeedFruit(mainAgent, foodHandler, screen, terrain)) || (mainAgent->type->targetAmount > 0 && tryFeedAgent(mainAgent, list, screen, terrain)))
+    if(tryFlee(mainAgent, list, screen, terrain))
     {
-        return 1;
+        return 4;
+    }
+    if(!canReprod)
+    {
+        if ((mainAgent->type->targetAmount == 0 && tryFeedFruit(mainAgent, foodHandler, screen, terrain)) || (mainAgent->type->targetAmount > 0 && tryFeedAgent(mainAgent, list, screen, terrain)))
+        {
+            return 1;
+        }
     }
 
 
