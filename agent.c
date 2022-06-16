@@ -24,6 +24,7 @@ float resistance, float hRange, int asexual, int birthRate, float fertility, flo
     newAgent->name = name;
     newAgent->typeId = typeId;
     newAgent->lifeSpan = lifeSpan;
+    newAgent->minLifeSpanForReprod = lifeSpan - (lifeSpan/3);
     newAgent->timeLeft = lifeSpan;
     newAgent->energy = energy;
     newAgent->speed = speed;
@@ -264,7 +265,7 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
         newFertilityRate = agentType2->fertilityRate;
 
     return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
-                           newSpeed, newResistance, newHrange, agent1->type->asexual, agent1->type->birthRate, agent1->type->fertilityRate,
+                           newSpeed, newResistance, newHrange, agent1->type->asexual, agent1->type->birthRate, newFertilityRate,
                            agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
@@ -330,12 +331,13 @@ int moveTowards(agent* agent, simulation* sim, int x, int y)
     {
         double ratio = (double)agent->type->speed / distance;
         moveAgent(agent, (int)(xOFF * ratio), (int)(yOFF * ratio), sim->screen);
-        agent->type->energy -= energyCost(0.1,agent,sim); //agent->type->speed * agent->type->speed;
+        agent->type->energy -= energyCost(agent->type->moveCost/10,agent,sim); //agent->type->speed * agent->type->speed;
         return 0;
     }
-    agent->Xpos = x;
-    agent->Ypos = y;
-    agent->type->energy -= energyCost(0.1,agent,sim);  //(float) distance * distance;
+    agent->Xpos = MIN(MAX(0, x), sim->screen->w-1);
+    agent->Ypos = MIN(MAX(0, y), sim->screen->h-1);
+    //printf("x: %i, y: %i\n", agent->Xpos, agent->Ypos);
+    agent->type->energy -= energyCost(agent->type->moveCost/10,agent,sim);  //(float) distance * distance;
     return 1;
 }
 
@@ -438,7 +440,7 @@ int tryMate(agent* mainAgent, simulation* sim)
 {
     agent* target = NULL;
     double minDist = 0;
-    if (mainAgent->type->asexual && mainAgent->type->energy >= REPRODUCTION_THRESHOLD){
+    if (mainAgent->type->asexual && mainAgent->type->energy >= REPRODUCTION_THRESHOLD && mainAgent->type->lifeSpan <= mainAgent->type->minLifeSpanForReprod){
         reproduction(mainAgent, mainAgent, sim);
         return 1;
     }
@@ -449,7 +451,7 @@ int tryMate(agent* mainAgent, simulation* sim)
         {
             continue;
         }
-        if ((mainAgent->type->typeId == currAgent->type->typeId) && (currAgent->type->energy > REPRODUCTION_THRESHOLD))
+        if ((mainAgent->type->typeId == currAgent->type->typeId) && (currAgent->type->energy > REPRODUCTION_THRESHOLD) && mainAgent->type->lifeSpan <= mainAgent->type->minLifeSpanForReprod)
         {
             int xOffset = currAgent->Xpos - mainAgent->Xpos;
             int yOffset = currAgent->Ypos - mainAgent->Ypos;

@@ -8,6 +8,7 @@ typedef struct agentType{
     char* name;
     int typeId;
     float lifeSpan;
+    float minLifeSpanForReprod;
     float timeLeft;
     float energy;
     float speed;
