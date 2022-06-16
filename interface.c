@@ -117,7 +117,7 @@ void init_simulation(GtkButton *button __attribute__((unused)), gpointer user_da
         for (size_t j = 0; j < 50; j++)
         {
             agentType *aType = createAgentType(agents[i]->name, agents[i]->typeId, agents[i]->lifeSpan, agents[i]->energy, agents[i]->speed, agents[i]->resistance, 
-            agents[i]->hearingRange, agents[i]->birthRate, agents[i]->fertilityRate, agents[i]->birthCost, agents[i]->individualBirthCost, agents[i]->moveCost);
+            agents[i]->hearingRange, agents[i]->asexual, agents[i]->birthRate, agents[i]->fertilityRate, agents[i]->birthCost, agents[i]->individualBirthCost, agents[i]->moveCost);
             aType->targetAmount = agents[i]->targetAmount;
             aType->targetsId = calloc(1, sizeof(int));
             aType->targetsId[0] = agents[i]->targetsId[0];
@@ -152,6 +152,7 @@ void Save_Settings(GtkButton *button __attribute__((unused)), gpointer builder)
     GtkEntry* lifeTime = GTK_ENTRY(gtk_builder_get_object(builder, "LTimeEntry"));
     GtkRadioButton* hot = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Hot"));
     GtkRadioButton* cold = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Cold"));
+    GtkRadioButton* asexual = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Asexual"));
     GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
     GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
     GtkAdjustment* MovingEnergy = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "MoveCostData"));
@@ -167,6 +168,7 @@ void Save_Settings(GtkButton *button __attribute__((unused)), gpointer builder)
     activeAgent->speed = gtk_adjustment_get_value(speed);
     activeAgent->resistance = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(hot)) ? 0 : (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cold)) ? 1 : 0.5);
     activeAgent->hearingRange = gtk_adjustment_get_value(FoodRange);;
+    activeAgent->asexual = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(asexual));
     activeAgent->birthRate =  gtk_adjustment_get_value(maxChildren);
     activeAgent->birthCost = gtk_adjustment_get_value(birthCost);
     activeAgent->individualBirthCost = gtk_adjustment_get_value(IndividualBirthCost);
@@ -210,6 +212,8 @@ void Add_agents(GtkButton *button __attribute__((unused)), gpointer builder)
     GtkRadioButton* hot = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Hot"));
     GtkRadioButton* medium = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Tempered"));
     GtkRadioButton* cold = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Cold"));
+    GtkRadioButton* asexual = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Asexual"));
+    GtkRadioButton* sexual = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Sexual"));
     GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
     GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
     GtkAdjustment* MovingEnergy = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "MoveCostData"));
@@ -235,6 +239,7 @@ void Add_agents(GtkButton *button __attribute__((unused)), gpointer builder)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(hot), TRUE);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(medium), FALSE);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cold), FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(sexual), TRUE);
     gtk_adjustment_set_value(maxChildren, 1);
     gtk_adjustment_set_value(fertilityRate, 50);
     gtk_adjustment_set_value(MovingEnergy, 1);
@@ -242,7 +247,7 @@ void Add_agents(GtkButton *button __attribute__((unused)), gpointer builder)
     gtk_adjustment_set_value(IndividualBirthCost, 1);
 
     agents[nbAgents - 1] = createAgentType(s, nbAgents - 1, atoi(gtk_entry_get_text(lifeTime)), 100, gtk_adjustment_get_value(speed), 0, gtk_adjustment_get_value(FoodRange),
-    gtk_adjustment_get_value(maxChildren), gtk_adjustment_get_value(fertilityRate), gtk_adjustment_get_value(birthCost), gtk_adjustment_get_value(IndividualBirthCost),
+    0 ,gtk_adjustment_get_value(maxChildren), gtk_adjustment_get_value(fertilityRate), gtk_adjustment_get_value(birthCost), gtk_adjustment_get_value(IndividualBirthCost),
     gtk_adjustment_get_value(MovingEnergy));
     agents[nbAgents - 1]->targetAmount = 0;
     agents[nbAgents - 1]->targetsId = calloc(1, sizeof(int));
@@ -262,6 +267,8 @@ void change_settings(GtkComboBox *agent, gpointer builder)
     GtkRadioButton* hot = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Hot"));
     GtkRadioButton* medium = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Tempered"));
     GtkRadioButton* cold = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Cold"));
+    GtkRadioButton* asexual = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Asexual"));
+    GtkRadioButton* sexual = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Sexual"));
     GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
     GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
     GtkAdjustment* MovingEnergy = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "MoveCostData"));
@@ -294,6 +301,15 @@ void change_settings(GtkComboBox *agent, gpointer builder)
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(hot), FALSE);
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(medium), TRUE);
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cold), FALSE);
+    }
+    if (activeAgent->asexual){
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(asexual), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(sexual), FALSE);
+    }
+    else
+    {
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(asexual), FALSE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(sexual), TRUE);
     }
 
     gtk_adjustment_set_value(maxChildren, activeAgent->birthRate);
@@ -337,7 +353,7 @@ void setupGtk()
     
     char s[30];
     strcpy(s, gtk_entry_get_text(name));
-    agents[0] = createAgentType(s, 0, atoi(gtk_entry_get_text(lifeTime)), 30, gtk_adjustment_get_value(speed), 0, gtk_adjustment_get_value(FoodRange),
+    agents[0] = createAgentType(s, 0, atoi(gtk_entry_get_text(lifeTime)), 30, gtk_adjustment_get_value(speed), 0, gtk_adjustment_get_value(FoodRange), 0,
     gtk_adjustment_get_value(maxChildren), gtk_adjustment_get_value(fertilityRate), gtk_adjustment_get_value(birthCost), gtk_adjustment_get_value(IndividualBirthCost),
     gtk_adjustment_get_value(MovingEnergy));
     agents[0]->targetAmount = 0;

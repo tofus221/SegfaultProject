@@ -18,7 +18,7 @@
 
 //create an Agent Type, meant to be used with the interface.
 agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, 
-float resistance, float hRange, int birthRate, float fertility, float birthCost, float individualBirthCost, float moveCost){
+float resistance, float hRange, int asexual, int birthRate, float fertility, float birthCost, float individualBirthCost, float moveCost){
     agentType* newAgent = malloc(sizeof(agentType));
     memset(newAgent, 0, sizeof(agentType));
     newAgent->name = name;
@@ -29,6 +29,7 @@ float resistance, float hRange, int birthRate, float fertility, float birthCost,
     newAgent->speed = speed;
     newAgent->resistance = resistance;
     newAgent->hearingRange = hRange;
+    newAgent->asexual = asexual;
     newAgent->birthRate = birthRate;
     newAgent->birthCost = birthCost;
     newAgent->individualBirthCost = individualBirthCost;
@@ -232,7 +233,7 @@ agentType* reproductionWithGeneticDrift(agent* agent1, agent* agent2){
         newFertilityRate = geneticDrift(agent1->type->fertilityRate);
     }
     return createAgentType(agentType1->name, agentType1->typeId, 200, newEnergy,
-                           newSpeed, newResistance, newHrange, agent1->type->birthRate, newFertilityRate,
+                           newSpeed, newResistance, newHrange,agent1->type->asexual,agent1->type->birthRate, newFertilityRate,
                            agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
@@ -263,7 +264,7 @@ agentType* normalReproduction(agent* agent1, agent* agent2){ //not nice..
         newFertilityRate = agentType2->fertilityRate;
 
     return createAgentType(agentType1->name, agentType1->typeId, newLifeSpan, newEnergy,
-                           newSpeed, newResistance, newHrange, agent1->type->birthRate, agent1->type->fertilityRate,
+                           newSpeed, newResistance, newHrange, agent1->type->asexual, agent1->type->birthRate, agent1->type->fertilityRate,
                            agent1->type->birthCost, agent1->type->individualBirthCost, agent1->type->moveCost);
 }
 
@@ -273,7 +274,7 @@ void reproduction(agent* agent1, agent* agent2, simulation* sim){
     for (int i = 0; i < agent1->type->birthRate; ++i) {
         if (rand() % 100 <= agent1->type->fertilityRate){
             agentType* newType;
-            if (agent1->type->asexualReproduction || rand()%2){ //pick if there will be drift or not
+            if (agent1->type->asexual || rand()%2){ //pick if there will be drift or not
                 newType = reproductionWithGeneticDrift(agent1, agent2);
             }
             else {
@@ -437,7 +438,7 @@ int tryMate(agent* mainAgent, simulation* sim)
 {
     agent* target = NULL;
     double minDist = 0;
-    if (mainAgent->type->asexualReproduction && mainAgent->type->energy >= REPRODUCTION_THRESHOLD){
+    if (mainAgent->type->asexual && mainAgent->type->energy >= REPRODUCTION_THRESHOLD){
         reproduction(mainAgent, mainAgent, sim);
         return 1;
     }

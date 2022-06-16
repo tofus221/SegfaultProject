@@ -11,7 +11,7 @@ typedef struct agentType{
     float timeLeft;
     float energy;
     float speed;
-    int asexualReproduction;
+    int asexual;
     int birthRate;
     float birthCost;
     float individualBirthCost;
@@ -42,7 +42,7 @@ struct agentLinkedList{
 };
 
 agentType* createAgentType(char* name, int typeId, float lifeSpan, float energy, float speed, 
-float resistance, float hRange, int birthRate, float fertility, float birthCost, float individualBirthCost, float moveCost);
+float resistance, float hRange, int asexual,int birthRate, float fertility, float birthCost, float individualBirthCost, float moveCost);
 agent* createAgent(agentType* type, int x, int y);
 struct agentLinkedList* initLinkedList();
 void push(simulation* sim, agent* agent);
