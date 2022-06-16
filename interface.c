@@ -14,7 +14,7 @@ SDL_Surface *terrain;
 Uint8 r = 0;
 agentType **agents;
 agentType *activeAgent;
-int nbAgents = 1;
+size_t nbAgents = 1;
 // Function to swap two numbers
 void swap(char *x, char *y) {
     char t = *x; *x = *y; *y = t;
@@ -76,7 +76,7 @@ char* itoa(int value, char* buffer, int base)
 
 void update(simulation *sim)
 {
-    spawnFood(sim->foodHandler);
+    spawnFood(sim->foodHandler, W_WIDTH, W_HEIGHT);
     SDL_Surface *screen = sim->screen;
     SDL_BlitSurface(terrain, NULL, screen, NULL);
     for (struct agentLinkedList *al = sim->agentList->next; al != NULL;)
@@ -103,7 +103,7 @@ void update(simulation *sim)
     drawFood(sim->foodHandler, screen);
 }
 
-void call_perlin_noise(GtkButton *button __attribute__((unused)), gpointer user_data __attribute__((unused)))
+void init_simulation(GtkButton *button __attribute__((unused)), gpointer user_data __attribute__((unused)))
 {
     terrain = perlin_surface(W_WIDTH, W_HEIGHT, 0.005);
     srand(time(0));
@@ -111,25 +111,22 @@ void call_perlin_noise(GtkButton *button __attribute__((unused)), gpointer user_
 
     int infect[1] ={1}; 
     sickness* droopy_nose = createSickness("droop",0.5,1,0.01,infect,1,SDL_MapRGB(sim->screen->format, 0, 0, 0));
-    for (size_t i = 0; i < 10; i++)
+    for (size_t i = 0; i < nbAgents; i++)
     {
-        agentType* aType = createAgentType("wolf", 1, 200, 150, 4, 0.5, 40, 2, 50, 300, 50, 1);
-        aType->targetAmount = 1;
-        aType->targetsId = calloc(aType->targetAmount, sizeof(int));
-        aType->targetsId[0] = 2;
-        aType->color = SDL_MapRGB(sim->screen->format, 255, 0, 0);
-        agent* wolf = createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h));
-        addSickness(wolf->SLL,droopy_nose);
-        push(sim, wolf);
-    }
-
-    for (size_t i = 0; i < 600; i++)
-    {
-        agentType* aType = createAgentType("sheep", 2, 200, 150, 3, 0.5, 100, 2, 50, 300, 50, 1);
-        aType->targetAmount = 0;
-        aType->color = SDL_MapRGB(sim->screen->format, 0, 255, 0);
-        agent* sheep = createAgent(aType,rand() % (sim->screen->w),rand() % (sim->screen->h));
-        push(sim, sheep);
+        Uint32 color = SDL_MapRGB(sim->screen->format, rand() % 255, rand() % 255, rand() % 255);
+        for (size_t j = 0; j < 50; j++)
+        {
+            agentType *aType = createAgentType(agents[i]->name, agents[i]->typeId, agents[i]->lifeSpan, agents[i]->energy, agents[i]->speed, agents[i]->resistance, 
+            agents[i]->hearingRange, agents[i]->birthRate, agents[i]->fertilityRate, agents[i]->birthCost, agents[i]->individualBirthCost, agents[i]->moveCost);
+            aType->targetAmount = agents[i]->targetAmount;
+            aType->targetsId = calloc(1, sizeof(int));
+            aType->targetsId[0] = agents[i]->targetsId[0];
+            aType->color = color;
+            agent *a = createAgent(aType, rand() % W_WIDTH, rand() % W_HEIGHT);
+            addSickness(a->SLL, droopy_nose);
+            push(sim, a);
+        }
+        
     }
 
     run(sim, update);
@@ -146,7 +143,6 @@ void Save_Settings(GtkButton *button __attribute__((unused)), gpointer builder)
 {
     GtkTreeIter iter;
     GtkComboBox* agentCombo = GTK_COMBO_BOX(gtk_builder_get_object(builder, "Agent"));
-    GtkEntry* agentEntry = GTK_ENTRY(gtk_builder_get_object(builder, "AgentListEntry"));
     GtkListStore* agent = GTK_LIST_STORE(gtk_builder_get_object(builder, "AgentList"));
     GtkEntry* name = GTK_ENTRY(gtk_builder_get_object(builder, "NameEntry"));
     GtkComboBox* foodTarget = GTK_COMBO_BOX(gtk_builder_get_object(builder, "FTCombo"));
@@ -223,7 +219,7 @@ void Add_agents(GtkButton *button __attribute__((unused)), gpointer builder)
     nbAgents++;
     agents = realloc(agents, nbAgents * sizeof(agentType *));
     char *s = malloc(30);
-    sprintf(s, "Agent %i", nbAgents);
+    sprintf(s, "Agent %ld", nbAgents);
     gtk_entry_set_text(name, s);
     
     GtkTreeIter tmp;
@@ -341,7 +337,7 @@ void setupGtk()
     
     char s[30];
     strcpy(s, gtk_entry_get_text(name));
-    agents[0] = createAgentType(s, 0, atoi(gtk_entry_get_text(lifeTime)), 100, gtk_adjustment_get_value(speed), 0, gtk_adjustment_get_value(FoodRange),
+    agents[0] = createAgentType(s, 0, atoi(gtk_entry_get_text(lifeTime)), 30, gtk_adjustment_get_value(speed), 0, gtk_adjustment_get_value(FoodRange),
     gtk_adjustment_get_value(maxChildren), gtk_adjustment_get_value(fertilityRate), gtk_adjustment_get_value(birthCost), gtk_adjustment_get_value(IndividualBirthCost),
     gtk_adjustment_get_value(MovingEnergy));
     agents[0]->targetAmount = 0;
@@ -349,7 +345,7 @@ void setupGtk()
     activeAgent = agents[0];
 
 	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-	g_signal_connect(run, "clicked", G_CALLBACK(call_perlin_noise), NULL);
+	g_signal_connect(run, "clicked", G_CALLBACK(init_simulation), NULL);
 
     g_signal_connect(save, "clicked", G_CALLBACK(Save_Settings), builder);
     g_signal_connect(AddAgent, "clicked", G_CALLBACK(Add_agents), builder);
