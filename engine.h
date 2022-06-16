@@ -3,7 +3,7 @@
 
 #include <SDL/SDL.h>
 #include "food.h"
-
+#include "stats.h"
 
 typedef struct button
 {
@@ -21,7 +21,8 @@ typedef struct simulation
     SDL_Surface *renderer;
     struct agentLinkedList* agentList;
     struct agentType *agents;
-    //this isn't the current population, it is used to determine the id of every agent. It will only increase.
+    struct SimList *sl;
+    int nbAgents;
     foodHandler* foodHandler;
     button play;
     button speed;

@@ -5,6 +5,7 @@
 #include "food.h"
 
 
+
 typedef struct agentType{
     char* name;
     int typeId;
