@@ -23,7 +23,6 @@ typedef struct simulation
     struct agentType *agents;
     struct SimList *sl;
     int nbAgents;
-    int popCount; //this isn't the current population, it is used to determine the id of every agent. It will only increase.
     foodHandler* foodHandler;
     button play;
     button speed;
