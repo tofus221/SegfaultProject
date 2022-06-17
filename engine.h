@@ -19,8 +19,8 @@ typedef struct button
 typedef struct simulation
 {
     SDL_Surface *screen;
-    SDL_Surface *terrain;
     SDL_Surface *renderer;
+    SDL_Surface *terrain;
     struct agentLinkedList* agentList;
     struct agentType *agents;
     struct SimList *sl;

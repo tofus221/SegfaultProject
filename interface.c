@@ -225,7 +225,6 @@ void Add_agents(GtkButton *button __attribute__((unused)), gpointer builder)
     GtkRadioButton* hot = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Hot"));
     GtkRadioButton* medium = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Tempered"));
     GtkRadioButton* cold = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Cold"));
-    GtkRadioButton* asexual = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Asexual"));
     GtkRadioButton* sexual = GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "Sexual"));
     GtkAdjustment* maxChildren = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "ChildrenData"));
     GtkAdjustment* fertilityRate = GTK_ADJUSTMENT(gtk_builder_get_object(builder, "FertilityData"));
